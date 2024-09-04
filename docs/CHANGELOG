@@ -1,0 +1,14 @@
+# Changelog
+
+
+## 2024-09-03
+
+* Realised that ConsolePi image installer is 32-bit Raspberry Pi OS, causes issues pulling docker images
+
+* Reinstall console server with vanilla Raspberry Pi OS + [ser2net](https://github.com/cminyard/ser2net)
+
+## 2024-09-02
+
+* Decided to move to a container based PXE install solution, instead of splitting config across Unifi DHCP configuration & TFTP server
+
+* Researched [matchbox](https://matchbox.psdn.io/), which looks interesting, but is quite clunky around the edges to install
