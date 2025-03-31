@@ -2,7 +2,7 @@
 
 ## Current Configuration
 
-* 1x [Unifi USW-Pro-24-PoE](https://techspecs.ui.com/unifi/switching/usw-pro-24-poe)
+* 1x [Unifi USW Pro Max 24](https://techspecs.ui.com/unifi/switching/usw-pro-max-24-poe)
 
 * 4x [Raspberry Pi Compute Module 4 - CM4008032](https://www.raspberrypi.com/products/compute-module-4/?variant=raspberry-pi-cm4008032)
 
