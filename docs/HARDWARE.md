@@ -29,9 +29,9 @@
 
 ## Deployment Details
 
-| Node       | Switch Port | MAC Address         | Board         | Compute Module |
-|------------|-------------|---------------------|---------------|----------------|
-| lab-node-1 | Port 1      | `d8:3a:dd:9f:50:45`	| CM4-IO-BASE-B | CM4008032     |
-| lab-node-2 | Port 2      | `d8:3a:dd:9f:51:bd`	| CM4-IO-BASE-B | CM4008032     |
-| lab-node-3 | Port 3      | `d8:3a:dd:9f:54:0e`	| CM4-IO-BASE-B | CM4008032     |
-| lab-node-4 | Port 4      | `d8:3a:dd:9f:54:db`	| CM4-IO-BASE-B | CM4008032     |
+| **Node**   | **Switch Port** | **MAC Address**     | **Board**     | **Compute Module** |
+|------------|-----------------|---------------------|---------------|--------------------|
+| lab-node-1 | Port 1          | `d8:3a:dd:9f:50:45`	| CM4-IO-BASE-B | CM4008032         |
+| lab-node-2 | Port 2          | `d8:3a:dd:9f:51:bd`	| CM4-IO-BASE-B | CM4008032         |
+| lab-node-3 | Port 3          | `d8:3a:dd:9f:54:0e`	| CM4-IO-BASE-B | CM4008032         |
+| lab-node-4 | Port 4          | `d8:3a:dd:9f:54:db`	| CM4-IO-BASE-B | CM4008032         |
