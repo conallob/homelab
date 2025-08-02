@@ -6,7 +6,7 @@
 ```
 podman run -d -it --rm  \
   --name dnsmasq \
-  -p 192.168.6.254:53:53/udp -p 192.168.6.254:53:53/tcp \
+  --net=host \
   -e "DNS1=192.168.1.3" -e "DNS2=192.168.6.1" \
   -v /etc/dnsmasq.conf:/etc/dnsmasq.conf \
   --cap-add=NET_ADMIN,NET_RAW \
