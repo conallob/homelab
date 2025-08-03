@@ -39,7 +39,7 @@ dhcp-boot=tag:amd64,netboot.xyz.efi,lab.taku.ie,192.168.1.3
 
 ### DHCP vis dnsmasq
 
-* Unifi UDM-Pro SE configured as DHCP relay
+* Unifi UDM-Pro SE configured as DHCP relay, with dnsmasq installed on `cmdnode`
 
 ```shell
 podman run -d -it --rm  \
