@@ -37,11 +37,11 @@
 | **Node**   | **Switch Port** | **MAC Address**     | **Board**     | **Compute Module** |
 |------------|-----------------|---------------------|-------------------------------|-------------------|
 | lab-node-1 | Port 1          | `d8:3a:dd:9f:54:db`	| Compute Blade v1 MK4 - Dev   | CM4008032         |
-| lab-node-2 | Port 2          |	                    | Compute Blade v1 MK4 - Basic | CM4008032         |
-| lab-node-3 | Port 3          | 	                   	| Compute Blade v1 MK4 - Basic | CM4008032         |
-| lab-node-4 | Port 4          |	                   	| Compute Blade v1 MK4 - Basic | CM4008032         |
-| lab-node-5 | Port 5          |	                    | Compute Blade v1 MK4 - Basic | CM4008032         |
-| lab-node-6 | Port 6          |	                    | Compute Blade v1 MK4 - Basic | CM4008032         |
+| lab-node-2 | Port 2          | `d8:3a:dd:9f:51:5e`  | Compute Blade v1 MK4 - Basic | CM4008032         |
+| lab-node-3 | Port 3          | `d8:3a:dd:9f:54:0e`	| Compute Blade v1 MK4 - Basic | CM4008032         |
+| lab-node-4 | Port 4          | `d8:3a:dd:9f:50:fc`	| Compute Blade v1 MK4 - Basic | CM4008032         |
+| lab-node-5 | Port 5          | `d8:3a:dd:9f:51:bd`  | Compute Blade v1 MK4 - Basic | CM4008032         |
+| lab-node-6 | Port 6          | `d8:3a:dd:9f:50:45`  | Compute Blade v1 MK4 - Basic | CM4008032         |
 
 
 ## Previous Deployment Details
