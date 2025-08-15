@@ -65,6 +65,12 @@ podman run -d --rm --name=netbootxyz  \
 
 </details>
 
+## Lessons Learnt
+
+* Raspberry Pi PXE defaults to checking for CPU S/N, not Network MAC address. Changing from MAC to S/N allowed
+* Flashing Talos Intstaller onto the eMMC of the Dev ComputeBlade was ultimately a waste of time and caused a distraction
+
 ## Additional Notes
 
 * https://luke.mallon.ie/posts/2025-05/compute-blade-pxe-boot/
+* https://gist.github.com/Roxedus/08a1351e4c092b7527a8830dd3456d7b
