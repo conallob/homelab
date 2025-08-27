@@ -1,0 +1,69 @@
+#!ipxe
+
+# Written by Claude 4 Sonnet, with the prompt
+# ```
+# Write an ipxe script to PXE boot raspberry pi compute module 4s, then  perform
+# an unattended install of talos using the talos image
+# https://pxe.factory.talos.dev/pxe/779804eb249e184f2986a0cacb95aa6ed8f133878449da8df9a68829f90902b9/v1.10.7/metal-arm64 . 
+# Refactor the talos version into an iPXE variable
+# ```
+
+
+#!ipxe
+
+# Talos Linux PXE Boot Script for Raspberry Pi Compute Module 4
+# This script will PXE boot RPi CM4s and perform unattended Talos installation
+
+# Talos version configuration
+set talos_version v1.10.7
+
+# Set console parameters for RPi (optional, adjust as needed)
+set console console=tty0 console=ttyAMA0,115200
+
+# Talos kernel parameters for unattended installation
+set talos_args talos.platform=metal talos.config=none
+
+# Optional: Set static network configuration if DHCP is not desired
+# Uncomment and modify the following lines as needed:
+# set ip_config ip=dhcp
+# set ip_config ip=${ip}:${gateway}:${netmask}:${hostname}:eth0:none:${dns}
+
+# Boot menu
+:start
+menu Talos Linux PXE Boot Menu
+item --gap -- Raspberry Pi Compute Module 4
+item talos_install Install Talos Linux (Unattended)
+item talos_maintenance Boot Talos Maintenance Mode
+item shell iPXE Shell
+item reboot Reboot
+choose --default talos_install --timeout 10000 option && goto ${option}
+
+:talos_install
+echo Booting Talos Linux for unattended installation...
+echo Fetching kernel and initramfs from factory.talos.dev...
+
+# Fetch Talos kernel and initramfs from the factory URL
+kernel https://pxe.factory.talos.dev/pxe/779804eb249e184f2986a0cacb95aa6ed8f133878449da8df9a68829f90902b9/${talos_version}/metal-arm64/vmlinuz ${console} ${talos_args} ${ip_config}
+initrd https://pxe.factory.talos.dev/pxe/779804eb249e184f2986a0cacb95aa6ed8f133878449da8df9a68829f90902b9/${talos_version}/metal-arm64/initramfs.xz
+
+echo Starting Talos installation...
+boot || goto failed
+
+:talos_maintenance
+echo Booting Talos Linux in maintenance mode...
+kernel https://pxe.factory.talos.dev/pxe/779804eb249e184f2986a0cacb95aa6ed8f133878449da8df9a68829f90902b9/${talos_version}/metal-arm64/vmlinuz ${console} talos.platform=metal talos.config=none init_on_alloc=1 slab_nomerge pti=on ${ip_config}
+initrd https://pxe.factory.talos.dev/pxe/779804eb249e184f2986a0cacb95aa6ed8f133878449da8df9a68829f90902b9/${talos_version}/metal-arm64/initramfs.xz
+boot || goto failed
+
+:shell
+echo Dropping to iPXE shell...
+shell
+
+:reboot
+echo Rebooting system...
+reboot
+
+:failed
+echo Boot failed! Press any key to return to menu...
+prompt
+goto start
