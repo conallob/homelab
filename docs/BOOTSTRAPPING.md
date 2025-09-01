@@ -45,3 +45,63 @@ sudo dd if=~/metal-arm64.raw bs=4M of=/dev/sda
 311+1 records out
 1306525696 bytes (1.3 GB, 1.2 GiB) copied, 0.594591 s, 2.2 GB/s
 ```
+
+
+## Install CNI
+
+Install Calico per https://www.talos.dev/v1.10/kubernetes-guides/network/deploying-cilium/#method-1-helm-install, specifically:
+
+1. Install Calico from helm, without `kube-proxy` and with `gateway-api`
+```
+   helm install \                                    ✔  1084  20:53:20
+    cilium \
+    cilium/cilium \
+    --version 1.18.0 \
+    --namespace kube-system \
+    --set ipam.mode=kubernetes \
+    --set kubeProxyReplacement=true \
+    --set securityContext.capabilities.ciliumAgent="{CHOWN,KILL,NET_ADMIN,NET_RAW,IPC_LOCK,SYS_ADMIN,SYS_RESOURCE,DAC_OVERRIDE,FOWNER,SETGID,SETUID}" \
+    --set securityContext.capabilities.cleanCiliumState="{NET_ADMIN,SYS_ADMIN,SYS_RESOURCE}" \
+    --set cgroup.autoMount.enabled=false \
+    --set cgroup.hostRoot=/sys/fs/cgroup \
+    --set k8sServiceHost=localhost \
+    --set k8sServicePort=7445 \
+    --set=gatewayAPI.enabled=true \
+    --set=gatewayAPI.enableAlpn=true \
+    --set=gatewayAPI.enableAppProtocol=true
+   ```
+
+## Install Tinkerbell
+
+Install tinkerbell per https://docs.computeblade.com/blade/advanced-guides/pxe-booting
+
+TODO(conallob): Document tinkerbell steps
+```
+kubectl get pods -n tinkerbell -o wide
+NAME                      READY   STATUS    RESTARTS   AGE   IP             NODE            NOMINATED NODE   READINESS GATES
+hookos-569c8c9df4-4vmpn   2/2     Running   0          25m   10.244.0.239   talos-t13-h3c   <none>           <none>
+...
+# Get the pod CIDRs to set as trusted proxies
+TRUSTED_PROXIES="0.0.0.0/0"
+
+# Set the LoadBalancer IP for Tinkerbell services
+LB_IP=192.168.6.127
+
+# Set the artifacts file server URL for HookOS
+ARTIFACTS_FILE_SERVER=http://10.244.0.239:7173
+
+# Specify the Tinkerbell Helm chart version, here we use the latest release.
+TINKERBELL_CHART_VERSION=v0.20.1
+```
+```
+helm install tinkerbell oci://ghcr.io/tinkerbell/charts/tinkerbell \
+  --version $TINKERBELL_CHART_VERSION \
+  --create-namespace \
+  --namespace tinkerbell \
+  --wait \
+  --set "trustedProxies={${TRUSTED_PROXIES}}" \
+  --set "publicIP=$LB_IP" \
+--set "artifactsFileServer=$ARTIFACTS_FILE_SERVER"
+```
+
+
