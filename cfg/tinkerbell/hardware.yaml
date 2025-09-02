@@ -21,3 +21,26 @@ spec:
         allowWorkflow: false
         ipxe:
           url: https://pxe.factory.talos.dev/pxe/33963bf2660f332e3cbde9851ea0f4cd7fde07ec950925a8883ef0c8602fe81d/v1.11.0/metal-arm64
+# Node 3
+---
+apiVersion: "tinkerbell.org/v1alpha1"
+kind: Hardware
+metadata:
+  name: bld-d83add9f540e
+  namespace: tink-system
+spec:
+  interfaces:
+    - dhcp:
+        ip:
+          address: 192.168.6.12
+          gateway: 192.168.6.1
+          netmask: 255.255.255.0
+        mac: d8:3a:dd:9f:54:0e
+        name_servers:
+          - 192.168.1.3
+        uefi: true
+      netboot:
+        allowPXE: true
+        allowWorkflow: false
+        ipxe:
+          url: https://pxe.factory.talos.dev/pxe/33963bf2660f332e3cbde9851ea0f4cd7fde07ec950925a8883ef0c8602fe81d/v1.11.0/metal-arm64
