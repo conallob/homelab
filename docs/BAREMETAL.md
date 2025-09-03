@@ -2,6 +2,18 @@
 
 ## Working Configuration
 
+1. Install talos.dev onto `dev` blade via USB key
+2. Create single node k8s cluster, enabling control-plane nodes as workers, per
+3. Install cilium.io as the CNI per
+4. Install tinkerbell, using a mix of:
+  1. https://tinkerbell.org/docs/setup/install/#tldr to install a modern tinkerbell version
+  1. https://docs.computeblade.com/blade/advanced-guides/pxe-booting#installing-tinkerbell-on-a-single-node-kubernetes-installation to configure the hardware
+  1. https://www.talos.dev/v1.11/kubernetes-guides/configuration/pod-security/#override-the-pod-security-admission-configuration to finally resolve the `PodSecurity` admission warnings + timeouts
+
+
+<details>
+<summary>Aborterd Configuration Attempts</summary>
+
 ### DHCP
 
 * DHCP configured on Unifi UDM-Pro SE
@@ -33,9 +45,6 @@ dhcp-boot=tag:amd64,netboot.xyz.efi,lab.taku.ie,192.168.1.3
 * Updated to use UEFI bootloader from the latest netboot.xyz release
 * Install https://github.com/raspberrypi/firmware and
   https://github.com/pftf/RPi4
-
-<details>
-<summary>Aborterd Configuration Attempts</summary>
 
 ### DHCP vis dnsmasq
 
