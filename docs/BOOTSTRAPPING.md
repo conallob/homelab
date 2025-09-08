@@ -1,5 +1,12 @@
 # Bootstrapping
 
+## Fix the Boot Order on each CM4
+
+1. Physically move the CM4 from the basic to DEV blade
+2. Boot into bootloader using `nRPIBOOT` button
+3. `cd usbboot/` and add `BOOT_ORDER=0xf16472` to `recovery/boot.conf`
+4. Flash recovery firmware, `sudo ./rpiboot -d recovery/`
+
 ## Installing the CM4 Modules for Kubernetes
 
 1. Follow https://github.com/raspberrypi/usbboot?tab=readme-ov-file#building to get `rpiboot`
@@ -46,12 +53,24 @@ sudo dd if=~/metal-arm64.raw bs=4M of=/dev/sda
 1306525696 bytes (1.3 GB, 1.2 GiB) copied, 0.594591 s, 2.2 GB/s
 ```
 
+## Add Nodes to Cluster
+
+1. Transfer CM4 back to the basic board it came from
+2. Boot up, then add
+3. Generate Talos `secrets.yaml`, `controlplane.yaml` and `workers.yaml` using
+```
+talosctl gen secrets -o secrets.yaml
+talosctl gen config --with-secrets secrets.yaml <cluster-name> <cluster-endpoint>
+talosctl apply-config --insecure \
+    --nodes [NODE IP] \
+    --file controlplane.yaml
+```
 
 ## Install CNI
 
 Install Calico per https://www.talos.dev/v1.10/kubernetes-guides/network/deploying-cilium/#method-1-helm-install, specifically:
 
-1. Install Calico from helm, without `kube-proxy` and with `gateway-api`
+1. Install Cilium from helm, without `kube-proxy` and with `gateway-api`
 ```
    helm install \                                    ✔  1084  20:53:20
     cilium \
