@@ -3,6 +3,8 @@
 ## 2025-10-07
 
 * Cilium CNI installed
+* ArgoCD installed per https://argo-cd.readthedocs.io/en/stable/#quick-start
+* Longhorn CSI installed per https://longhorn.io/docs/1.10.0/deploy/install/install-with-kubectl/
 
 ## 2025-10-06
 
