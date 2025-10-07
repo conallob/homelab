@@ -45,7 +45,8 @@ Loading: mass-storage-gadget64/boot.img
 File read: boot.img
 Second stage boot server done
 ```
-4.
+1. If necessary, use `parted` or `Disk Utility` to erase partitions
+1.
 ```
 sudo dd if=~/metal-arm64.raw bs=4M of=/dev/sda
 311+1 records in
@@ -55,28 +56,48 @@ sudo dd if=~/metal-arm64.raw bs=4M of=/dev/sda
 
 ## Add Nodes to Cluster
 
+Following https://www.talos.dev/v1.11/introduction/prodnotes/
+
 1. Transfer CM4 back to the basic board it came from
 2. Boot up, then add
 3. Generate Talos `secrets.yaml`, `controlplane.yaml` and `workers.yaml` using
 ```
+CONTROL_PLANE_IP=("<control-plane-ip-1>" "<control-plane-ip-2>" "<control-plane-ip-3>")
+WORKER_IP=("<worker-ip-1>" "<worker-ip-2>" "<worker-ip-3>")
+export CLUSTER_NAME=<your_cluster_name>
+export YOUR_ENDPOINT=<your_endpoint>
 talosctl gen secrets -o secrets.yaml
-talosctl gen config --with-secrets secrets.yaml <cluster-name> <cluster-endpoint>
-talosctl apply-config --insecure \
-    --nodes [NODE IP] \
+talosctl gen config --with-secrets secrets.yaml $CLUSTER_NAME https://$YOUR_ENDPOINT:6443
+talosctl get disks --insecure --nodes <node-ip-address>
+# Configure Control Plane Nodes
+for ip in "${CONTROL_PLANE_IP[@]}"; do
+  echo "=== Applying configuration to node $ip ==="
+  talosctl apply-config --insecure \
+    --nodes $ip \
     --file controlplane.yaml
+  echo "Configuration applied to $ip"
+  echo ""
+done
+# Configure Workers
+for ip in "${WORKER_IP[@]}"; do
+  echo "=== Applying configuration to node $ip ==="
+  talosctl apply-config --insecure \
+    --nodes $ip \
+    --file worker.yaml
+  echo "Configuration applied to $ip"
+  echo ""
+done
+talosctl config endpoint <control_plane_IP_1> <control_plane_IP_2> <control_plane_IP_3>
+talosctl kubeconfig --nodes <control-plane-IP>
 ```
 
 ## Install CNI
 
-Install Calico per https://www.talos.dev/v1.10/kubernetes-guides/network/deploying-cilium/#method-1-helm-install, specifically:
+Install Cilium via CLI per https://www.talos.dev/v1.11/kubernetes-guides/network/deploying-cilium/#without-kube-proxy
 
-1. Install Cilium from helm, without `kube-proxy` and with `gateway-api`
+1. Install Cilium via `cilium-cli`, without `kube-proxy` and with `gateway-api`
 ```
-   helm install \                                    ✔  1084  20:53:20
-    cilium \
-    cilium/cilium \
-    --version 1.18.0 \
-    --namespace kube-system \
+cilium install \
     --set ipam.mode=kubernetes \
     --set kubeProxyReplacement=true \
     --set securityContext.capabilities.ciliumAgent="{CHOWN,KILL,NET_ADMIN,NET_RAW,IPC_LOCK,SYS_ADMIN,SYS_RESOURCE,DAC_OVERRIDE,FOWNER,SETGID,SETUID}" \
@@ -85,10 +106,13 @@ Install Calico per https://www.talos.dev/v1.10/kubernetes-guides/network/deployi
     --set cgroup.hostRoot=/sys/fs/cgroup \
     --set k8sServiceHost=localhost \
     --set k8sServicePort=7445 \
-    --set=gatewayAPI.enabled=true \
-    --set=gatewayAPI.enableAlpn=true \
-    --set=gatewayAPI.enableAppProtocol=true
-   ```
+    --set gatewayAPI.enabled=true \
+    --set gatewayAPI.enableAlpn=true \
+    --set gatewayAPI.enableAppProtocol=true
+```
+
+<details>
+  <summary>Previously</summary>
 
 ## Install Tinkerbell
 
@@ -123,4 +147,5 @@ helm install tinkerbell oci://ghcr.io/tinkerbell/charts/tinkerbell \
 --set "artifactsFileServer=$ARTIFACTS_FILE_SERVER"
 ```
 
+</details>
 
