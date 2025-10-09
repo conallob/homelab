@@ -1,5 +1,16 @@
 # Software
 
+* [ ] Kubernetes
+* [ ] Container Network Interface (CNI)
+* [ ] Container Storage Interface (CSI)
+* [ ] Ingress
+* [ ] ArgoCD Operator
+* [ ] Secrets Operator
+
+
+<details>
+  <summary>Previously</summary>
+
 ## Console Server
 
 ### Current
@@ -32,3 +43,5 @@ podman run --rm --cap-add=NET_ADMIN,NET_RAW --net=host quay.io/poseidon/dnsmasq:
   --log-queries \
   --log-dhcp
 ```
+
+</details>
