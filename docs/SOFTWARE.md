@@ -1,10 +1,10 @@
 # Software
 
-* [ ] Kubernetes
-* [ ] Container Network Interface (CNI)
+* [x] Kubernetes
+* [x] Container Network Interface (CNI)
 * [ ] Container Storage Interface (CSI)
 * [ ] Ingress
-* [ ] ArgoCD Operator
+* [x] ArgoCD Operator
 * [ ] Secrets Operator
 
 
