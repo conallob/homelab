@@ -1,5 +1,13 @@
 # Changelog
 
+## 2025-11-23
+
+* 3x CM5 with 16GB RAM + 64GB eMMC Flashed with Talos v.11.3
+
+## 2025-11-06
+
+* Upgraded all 7 nodes to Talos v1.11.5
+
 ## 2025-10-07
 
 * Cilium CNI installed
