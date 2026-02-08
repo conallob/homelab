@@ -1,7 +1,6 @@
 machine:
   network:
     interfaces:
-      - deviceSelector:
-          busPath: "0*" # This selector works for most single-NIC setups
+      - interface: end0
         vip:
           ip: 192.168.6.2
