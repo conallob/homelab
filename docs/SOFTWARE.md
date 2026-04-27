@@ -45,3 +45,8 @@ podman run --rm --cap-add=NET_ADMIN,NET_RAW --net=host quay.io/poseidon/dnsmasq:
 ```
 
 </details>
+
+## Talos Factory Semantic IDs
+
+* CM5 - `c2da9242b133f6f82bb686864b6d7de6a42d7599bb4e40ac07aa5b49827796a9`
+* CM4 - `9c17e26911d4ad2c1899ed4dc9f1e99753ce47cbd1d154898c8e3aae3b347e4f`
