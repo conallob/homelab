@@ -43,6 +43,8 @@
 | lab-node-5 | Port 5          | `d8:3a:dd:9f:51:bd`  | Compute Blade v1 MK4 - Basic | CM4008032         |
 | lab-node-6 | Port 6          | `d8:3a:dd:9f:50:45`  | Compute Blade v1 MK4 - Basic | CM4008032         |
 | ctrl-plane-1 |               | `88:a2:9e:51:9c:76`  |                              | CM5016064         |
+| ctrl-plane-2 |               | `88:a2:9e:51:a1:c7`  |                              | CM5016064         |
+| ctrl-plane-3 |               | `88:a2:9e:51:a3:0a`  |                              | CM5016064         |
 
 ## Previous Deployment Details
 
