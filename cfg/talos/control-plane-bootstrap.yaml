@@ -1,6 +1,13 @@
 machine:
   install:
     disk: /dev/mmcblk0
+  nodeLabels:
+    node-role.kubernetes.io/control-plane: ""
+    kubernetes.io/arch: arm64
+    node.kubernetes.io/soc: cm5
+    node.kubernetes.io/ram: 16gb
+    node.kubernetes.io/baseboard: cm4-io-base-b
+    node.kubernetes.io/baseboard-manufacturer: waveshare
   network:
     nameservers:
       - 192.168.1.3
