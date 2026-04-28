@@ -26,6 +26,7 @@ machine:
 
 cluster:
   allowSchedulingOnControlPlanes: true
+  # Per https://docs.siderolabs.com/kubernetes-guides/cni/deploying-cilium
   network:
     cni:
       name: none
