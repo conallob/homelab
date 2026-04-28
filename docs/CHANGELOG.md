@@ -1,9 +1,35 @@
 ---
 tags:
+  - hardware
   - homelab
+  - kubernetes
+  - k8s
   - learning
+  - rpi
+  - raspberry-pi
+  - talos
 ---
 # Changelog
+
+
+## 2026-04-28
+
+* Reflashed talos onto every CM5 and CM4
+* CM5 nodes are booting fine, CM4 nodes however appear to be stuck in a reboot loop
+* Followed https://docs.siderolabs.com/talos/v1.13/getting-started/getting-started
+  to create a new talos kubnernetes cluster
+
+## 2026-04-27
+
+* Forked https://github.com/talos-rpi5/talos-builder to create a Talos v1.12.x
+  install image for the RPi 5
+* Eventually got https://github.com/conallob/talos-builder/ building a v1.12.7
+  image, which required a few iterations after running into boot issues
+* Discovered Talos v1.13.0 was released today, and has official support for the RPi 5
+* Nope, maybe not. v1.13.0 doesn't boot on the CM5s, 
+* Let Claude run the `talosctl` steps to bootstrap the cluster. It went crazy and
+  I had to reflash every CM4 and CM5 by hand
+
 
 ## 2025-11-23
 
