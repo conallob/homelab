@@ -1,6 +1,0 @@
-machine:
-  network:
-    interfaces:
-      - interface: end0
-        vip:
-          ip: 192.168.6.2
