@@ -1,11 +1,25 @@
 # Bootstrapping
 
-## Fix the Boot Order on each CM4
+## Fix the Boot Order on each CM4 and CM5
+
+`BOOT_ORDER=0xf21` = PXE first, eMMC fallback, loop (nibbles read right-to-left: `1`=eMMC, `2`=network/PXE, `f`=restart sequence). All nodes use onboard eMMC for the OS install; NVMe (CM4 only) is excluded from the boot order intentionally.
+
+### CM4
 
 1. Physically move the CM4 from the basic to DEV blade
-2. Boot into bootloader using `nRPIBOOT` button
-3. `cd usbboot/` and add `BOOT_ORDER=0xf16472` to `recovery/boot.conf`
-4. Flash recovery firmware, `sudo ./rpiboot -d recovery/`
+2. Fit the nRPIBOOT jumper, connect USB slave port, power on
+3. `cd usbboot/` and set `BOOT_ORDER=0xf21` in `recovery/boot.conf`
+4. Flash: `sudo ./rpiboot -d recovery/`
+5. Move CM4 back to its original blade
+
+### CM5
+
+> **Note:** Pre-built `rpiboot` binaries do not support BCM2712 (CM5) — must build from source.
+> See https://github.com/raspberrypi/usbboot#building
+
+1. Fit the nRPIBOOT jumper, connect USB slave port, power on
+2. `cd usbboot/` and set `BOOT_ORDER=0xf21` in `recovery5/boot.conf`
+3. Flash: `sudo ./rpiboot -d recovery5/`
 
 ## Installing the CM4 Modules for Kubernetes
 
