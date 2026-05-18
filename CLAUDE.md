@@ -66,6 +66,14 @@ Two provisioning paths exist (see `docs/decisions/000-provisioning.md` for ratio
 1. **Direct PXE (current):** dnsmasq on console server → `cfg/compute-blade.ipxe` → Talos kernel from `factory.talos.dev` → `talosctl apply-config`
 2. **Tinkerbell (in progress):** Tinkerbell smee in-cluster handles DHCP/iPXE for new nodes, referencing `cfg/tinkerbell/hardware.yaml`
 
+## EEPROM Boot Order
+
+All CM4 and CM5 nodes use `BOOT_ORDER=0xf12` — network/PXE first (`2`), then SD/eMMC (`1`), then restart (`f`).
+
+Key codes: `1` = SD/eMMC, `2` = network/PXE, `4` = USB, `6` = NVMe PCIe, `f` = restart. Note: `1` covers both SD card and eMMC (firmware tries eMMC when no SD card is present). `6` is NVMe, **not** eMMC.
+
+Boot config files: `~/Documents/GitHub/usbboot/recovery/boot.conf` (CM4) and `~/Documents/GitHub/usbboot/recovery5/boot.conf` (CM5). After editing, regenerate the `.bin` with `./update-pieeprom.sh` before flashing.
+
 ## Modifying iPXE / dnsmasq
 
 - `cfg/compute-blade.ipxe` — update the `TALOS_VERSION` variable at the top when upgrading Talos
