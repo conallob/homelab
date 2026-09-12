@@ -12,6 +12,27 @@ tags:
 # Changelog
 
 
+## 2026-09-12
+
+* Shelved CM5/Pi5 support in `talos-rpi-builder` after an unresolved GRUB→kernel
+  silent reboot loop persisted across multiple fixes — see
+  [decisions/001-cm5-shelved-image-factory.md](decisions/001-cm5-shelved-image-factory.md)
+* Pivoted CM4 provisioning to Talos's official Image Factory
+  (factory.talos.dev) instead of the custom build pipeline
+* Bumped `talos-rpi-builder` to Talos v1.14.0 (three merged PRs fixing real
+  upstream breakage: `hack/modules-arm64.txt` regen, a new strict `depmod`
+  check requiring `/boot/System.map`, and two Pi-irrelevant modules
+  (`hibmc-drm.ko`, `panfrost.ko`) that became fatal under the stricter check)
+* Flashed the resulting v1.14.0 image to a CM4 (eMMC and NVMe) and hit a UART
+  boot failure — RPi boot ROM reported `start4.elf`/`config.txt` "not found"
+  on the eMMC's EFI partition despite the files being verified present when
+  mounted on macOS; root cause not yet confirmed, see BAREMETAL.md
+* Designed (not yet applied) a fleet-wide EEPROM `boot.conf` for the planned
+  7-node cluster: `BOOT_ORDER=0xf261`, with node role expressed by which
+  device carries a bootable Talos partition rather than by boot order —
+  workers boot Talos from eMMC/SD (NVMe left blank for Longhorn/CSI storage),
+  control-plane boots Talos from NVMe (eMMC left blank)
+
 ## 2026-04-28
 
 * Reflashed talos onto every CM5 and CM4
