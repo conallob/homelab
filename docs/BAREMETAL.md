@@ -79,6 +79,28 @@ podman run -d --rm --name=netbootxyz  \
 * Raspberry Pi PXE defaults to checking for CPU S/N, not Network MAC address. Changing from MAC to S/N allowed
 * Flashing Talos Intstaller onto the eMMC of the Dev ComputeBlade was ultimately a waste of time and caused a distraction
 
+### eMMC boot failure on custom-built Talos v1.14.0 image (2026-09-12, unresolved)
+
+Flashing a custom `talos-rpi-builder` v1.14.0 image (its own build pipeline,
+not Image Factory — see
+[decisions/001-cm5-shelved-image-factory.md](decisions/001-cm5-shelved-image-factory.md))
+to a CM4, tried on both eMMC and NVMe, produced a UART boot failure: the RPi
+boot ROM reported `start4.elf`, `config.txt`, etc. as "not found" on the
+eMMC's EFI partition.
+
+* Confirmed via macOS mount that the files (`start4.elf`, `config.txt`,
+  `EFI/boot/BOOTAA64.efi`, etc.) genuinely exist on the partition — this
+  isn't a "forgot to write them" problem.
+* Reflashed the CM4's bootloader EEPROM to the latest revision via
+  `raspberrypi/usbboot`'s `rpiboot -d recovery` (`EEPROM_UPDATE: success`
+  confirmed).
+* **Not yet done:** re-test eMMC boot post-EEPROM-update to see if the
+  symptom cleared. Also worth checking whether the same symptom occurs on
+  the Image Factory image, since that's the image now actually in use for
+  CM4 (see decision 001) — if it's an EEPROM-side issue rather than an
+  image-build issue, it should reproduce there too.
+* Root cause not yet confirmed as of this writing.
+
 ## Additional Notes
 
 * https://luke.mallon.ie/posts/2025-05/compute-blade-pxe-boot/
