@@ -1,3 +1,8 @@
+---
+tags:
+  - homelab
+  - learning
+---
 # CM5/Pi5 Shelved, CM4 Moved to Image Factory
 
 ## Context
@@ -46,3 +51,18 @@ cleanly on CM4 eMMC — an UNRELATED eMMC boot failure was hit on the
 `talos-rpi-builder` pipeline's own v1.14.0 image first (see
 [BAREMETAL.md](../BAREMETAL.md#lessons-learnt)); it's not yet confirmed
 whether that symptom also affects the Image Factory image.
+
+## Status update (2026-09-19)
+
+Schematic `9c17e26911d4ad2c1899ed4dc9f1e99753ce47cbd1d154898c8e3aae3b347e4f`
+(above) is **superseded** — its `console=ttyS0,115200` causes a silent
+GRUB→kernel hang on these ComputeBlade CM4 boards (wrong UART device; see
+[CHANGELOG](../CHANGELOG.md) 2026-09-19 for the full root-cause writeup).
+Use `6b700850e84fbbaa67e3558d1d8599f336f36eb063b3a3763c97f7bc7b07a760`
+instead (`console=ttyAMA0,115200` + `console=tty1`), tracked in
+[HARDWARE.md](../HARDWARE.md) and [SOFTWARE.md](../SOFTWARE.md). This also
+answered the "open question" above in a roundabout way: the eMMC boot
+failure and the GRUB→kernel hang turned out to be two separate, unrelated
+issues — the console arg fix did not touch eMMC/NVMe boot-partition
+handling at all, and no eMMC "not found" symptom has recurred on the
+Image Factory image.

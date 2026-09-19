@@ -1,4 +1,17 @@
+---
+tags:
+  - homelab
+  - learning
+---
 # Homelab Hardware
+
+## Talos Image Schematics
+
+| **Node Type** | **Overlay** | **Schematic ID** | **Notes** |
+|---------------|-------------|------------------|-----------|
+| Raspberry Pi 5 | `rpi_5` | `74e4edb7eb35db8cc5815ca6e2183eded5fd855e904d973e6de64f503e1c02df` | `console=ttyAMA0,115200` |
+| CM4 | `rpi_generic` | `6b700850e84fbbaa67e3558d1d8599f336f36eb063b3a3763c97f7bc7b07a760` | `console=ttyAMA0,115200` + `console=tty1` — supersedes `9c17e269...` below, which hangs silently after GRUB (see [CHANGELOG](CHANGELOG.md) 2026-09-19) |
+| ~~CM4 (superseded)~~ | `rpi_generic` | ~~`9c17e26911d4ad2c1899ed4dc9f1e99753ce47cbd1d154898c8e3aae3b347e4f`~~ | `console=ttyS0,115200` — **do not use**, hangs after "Booting Talos" on ComputeBlade CM4s (wrong UART device) |
 
 ## Current Configuration
 
@@ -45,6 +58,7 @@
 | ctrl-plane-1 |               | `88:a2:9e:51:9c:76`  |                              | CM5016064         |
 | ctrl-plane-2 |               | `88:a2:9e:51:a1:c7`  |                              | CM5016064         |
 | ctrl-plane-3 |               | `88:a2:9e:51:a3:0a`  |                              | CM5016064         |
+| ctrl-plane-temp |            |                      | Raspberry Pi 5 Model B 8GB   | RPi5 (temporary)  |
 
 ## Previous Deployment Details
 
