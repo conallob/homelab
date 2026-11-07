@@ -1,0 +1,10 @@
+# Hardware flavour labels for lab-node-4 (see docs/HARDWARE.md)
+apiVersion: v1alpha1
+kind: KubeNodeConfig
+labels:
+  lab.taku.ie/soc: cm4
+  lab.taku.ie/ram: 8gb
+  lab.taku.ie/emmc: 32gb
+  lab.taku.ie/nvme: none
+  lab.taku.ie/baseboard: computeblade-basic
+  lab.taku.ie/baseboard-manufacturer: uptime-labs

@@ -51,14 +51,29 @@ tags:
 |------------|-----------------|---------------------|-------------------------------|-------------------|
 | lab-node-1 | Port 1          | `d8:3a:dd:9f:54:db`	| Compute Blade v1 MK4 - Dev   | CM4008032         |
 | lab-node-2 | Port 2          | `d8:3a:dd:9f:51:5e`  | Compute Blade v1 MK4 - Basic | CM4008032         |
-| lab-node-3 | Port 3          | `d8:3a:dd:9f:54:0e`	| Compute Blade v1 MK4 - Basic | CM4008032         |
+| lab-node-3 | Port 3          | `d8:3a:dd:9f:51:bd`	| Compute Blade v1 MK4 - Basic | CM4008032         |
 | lab-node-4 | Port 4          | `d8:3a:dd:9f:50:fc`	| Compute Blade v1 MK4 - Basic | CM4008032         |
-| lab-node-5 | Port 5          | `d8:3a:dd:9f:51:bd`  | Compute Blade v1 MK4 - Basic | CM4008032         |
+| lab-node-5 | Port 5          | `d8:3a:dd:9f:54:0e`  | Compute Blade v1 MK4 - Basic | CM4008032         |
 | lab-node-6 | Port 6          | `d8:3a:dd:9f:50:45`  | Compute Blade v1 MK4 - Basic | CM4008032         |
+
+The MAC belongs to the CM4 module, not the blade. During the 2026-09 mass reflash, the CM4s from port 3 and port 5 swapped blades: `51:bd` now runs as `lab-node-3` (192.168.6.103).
 | ctrl-plane-1 |               | `88:a2:9e:51:9c:76`  |                              | CM5016064         |
 | ctrl-plane-2 |               | `88:a2:9e:51:a1:c7`  |                              | CM5016064         |
 | ctrl-plane-3 |               | `88:a2:9e:51:a3:0a`  |                              | CM5016064         |
 | ctrl-plane-temp |            |                      | Raspberry Pi 5 Model B 8GB   | RPi5 (temporary)  |
+
+## Node Labels
+
+Each node carries hardware-flavour labels under the `lab.taku.ie/` prefix, set by its patch in `cfg/talos/nodes/<node>.yaml` and applied with `talosctl -n <ip> patch mc --patch @cfg/talos/nodes/<node>.yaml` (no reboot needed). Select by flavour, e.g. `kubectl get nodes -l lab.taku.ie/nvme!=none`.
+
+| **Node**   | `soc` | `ram` | `emmc` | `nvme` | `baseboard`          | `baseboard-manufacturer` |
+|------------|-------|-------|--------|--------|----------------------|--------------------------|
+| lab-node-1 | `cm4` | `8gb` | `32gb` | `128gb`| `computeblade-dev`   | `uptime-labs`            |
+| lab-node-2 | `cm4` | `8gb` | `32gb` | `1tb`  | `computeblade-basic` | `uptime-labs`            |
+| lab-node-3 | `cm4` | `8gb` | `32gb` | `1tb`  | `computeblade-basic` | `uptime-labs`            |
+| lab-node-4 | `cm4` | `8gb` | `32gb` | `none` | `computeblade-basic` | `uptime-labs`            |
+
+Values are measured from each node (`talosctl get disks`, `memorymodules`).
 
 ## Previous Deployment Details
 
