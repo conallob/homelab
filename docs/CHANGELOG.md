@@ -12,6 +12,23 @@ tags:
 # Changelog
 
 
+## 2026-11-07
+
+* All nodes back to `Ready` after the flannel → Cilium migration. Root cause:
+  Cilium 1.20.3 was Helm-installed on 2026-10-21 with no values, so agents
+  requested `SYS_MODULE` (dropped by Talos) and, once kube-proxy was removed,
+  couldn't reach the API server via `10.96.0.1`. `lab-node-1`/`lab-node-2`
+  only looked `Ready` because of a stale `10-flannel.conflist`.
+* Fix: removed `KubeFlannelCNIConfig` and disabled `KubeProxyConfig` in the
+  Talos config (`cilium-patch.yaml`), deleted the `kube-proxy`/flannel
+  objects, installed Gateway API v1.6.3 CRDs, and upgraded Cilium with
+  `cilium-values.yaml` (KubePrism, kube-proxy replacement, Talos caps).
+* Removed the ghost control-plane node `talos-rk5-3nq` (not an etcd member).
+* Lab VLAN widened to `192.168.6.0/23`; `192.168.7.0/24` is now the Cilium
+  LoadBalancer VIP netblock, announced via L2 on `end0`. See
+  `decisions/002-cilium-l2-vips.md`.
+
+
 ## 2026-09-19
 
 * Root-caused the CM4 boot hang first seen on `lab-node-1`, `lab-node-3`, and

@@ -17,7 +17,8 @@ See `cfg/talos/CLAUDE.md` for detailed Talos operational commands and architectu
 
 ```
 cfg/
-  talos/          # Talos machine configs + talosctl client config (see cfg/talos/CLAUDE.md)
+  talos/          # Live Talos machine configs + talosctl client config + Cilium config (see cfg/talos/CLAUDE.md)
+    20260919/     # Vestigial previous-generation configs and patches
   tinkerbell/     # Tinkerbell Helm values + Hardware CRDs for in-cluster bare-metal provisioning
   dnsmasq.conf    # DHCP/TFTP server config for PXE booting (runs on console server)
   compute-blade.ipxe  # iPXE boot menu served via TFTP; fetches Talos from factory.talos.dev
@@ -32,6 +33,8 @@ docs/
 ## Key Tools
 
 - `talosctl` — manage Talos nodes; set `TALOSCONFIG=cfg/talos/talosconfig`
+  - `controlplane.yaml`, `worker.yaml` and `talosconfig` hold cluster secrets: they are gitignored and stored in the 1Password vault `Homelab` as `talos/<generation>/<file>`
+- `bin/op-vault` — add, update and fetch gitignored sensitive files in the `Homelab` vault, e.g. `bin/op-vault get talos/20260920/talosconfig cfg/talos/talosconfig`
 - `kubectl` — Kubernetes cluster management
 - `helm` — deploys Cilium CNI and Tinkerbell
 - `rpiboot` — flash eMMC on CM4 via USB (see `docs/BOOTSTRAPPING.md`)
@@ -52,15 +55,29 @@ kubectl apply -f cfg/tinkerbell/hardware.yaml
 - LoadBalancer IP: `192.168.6.127` (configured in `cfg/tinkerbell/values.yaml`)
 - Hardware definitions in `cfg/tinkerbell/hardware.yaml` map MAC addresses → DHCP IPs → iPXE URLs
 
+## Cilium
+
+Cilium is the CNI, installed via Helm with kube-proxy replacement (Talos runs with `cluster.network.cni.name: none` and kube-proxy disabled). It reaches the API server via KubePrism on `localhost:7445`. LoadBalancer Services get VIPs from `192.168.7.0/24` via L2 announcements on `end0` (see `docs/decisions/002-cilium-l2-vips.md`).
+
+```bash
+# Upgrade Cilium (values drop SYS_MODULE, which Talos forbids)
+helm upgrade cilium cilium/cilium --version 1.20.3 -n kube-system \
+  -f cfg/talos/cilium-values.yaml
+
+# VIP pool + L2 announcement policy
+kubectl apply -f cfg/talos/cilium-lb.yaml
+```
+
 ## Network Layout
 
 | Purpose | IP / Range |
 |---------|-----------|
-| Lab subnet | `192.168.6.0/24` (domain: `lab.taku.ie`) |
-| DHCP range | `192.168.6.10–192.168.6.128` |
+| Lab subnet | `192.168.6.0/23` (domain: `lab.taku.ie`) |
+| DHCP range | `192.168.6.10–192.168.6.254` |
 | Control plane VIP | `192.168.6.250` |
 | Console server / dnsmasq | `192.168.6.254` |
 | Tinkerbell LoadBalancer | `192.168.6.127` |
+| Cilium LoadBalancer VIPs (L2) | `192.168.7.1–192.168.7.254` |
 
 VLAN 5 is used for the lab network on the Unifi switch.
 
