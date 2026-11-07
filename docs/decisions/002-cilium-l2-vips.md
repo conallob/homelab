@@ -2,6 +2,9 @@
 tags:
   - homelab
   - learning
+  - kubernetes
+  - talos
+  - raspberrypi
 ---
 # Cilium L2 Announcements for LoadBalancer VIPs
 

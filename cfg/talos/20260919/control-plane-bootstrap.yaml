@@ -1,5 +1,8 @@
 machine:
   install:
+    # All CM4 and CM5 nodes have onboard eMMC storage.
+    # Control-plane nodes have a 120GB 2242 NVMe, used as their install disk and for etcd.
+    # Worker nodes have a 1TB 2280 NVMe, used by the CSI.
     disk: /dev/nvme0n1
   nodeLabels:
     node-role.kubernetes.io/control-plane: ""
@@ -16,10 +19,7 @@ machine:
       - 1.1.1.1
     interfaces:
       - interface: end0
-        dhcp:
-          true
-          #vip:
-          #ip: 192.168.6.250
+        dhcp: true
   time:
     servers:
       - 162.159.200.1
