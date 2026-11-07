@@ -3,3 +3,5 @@
 cfg/talos/**/controlplane.yaml
 cfg/talos/**/worker.yaml
 cfg/talos/**/talosconfig
+# Output of `talosctl gen secrets` (see docs/BOOTSTRAPPING.md)
+secrets.yaml

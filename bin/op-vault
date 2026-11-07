@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# Add, update and fetch sensitive files (gitignored) in the 1Password vault "Homelab".
+# Titles follow <area>/<generation>/<file>, e.g. talos/20260920/talosconfig.
+# Set OP_ACCOUNT to pick an account when more than one is signed in.
+set -euo pipefail
+
+vault=Homelab
+
+usage() {
+  cat >&2 <<EOF
+Usage: $(basename "$0") <subcommand> [args]
+
+  add    <file> <title>   Store a new file in the vault (1Password allows duplicate
+                          titles, so use update for a title that already exists)
+  update <file> <title>   Replace an existing vault document with <file>
+  get    <title> <file>   Fetch a vault document into <file>
+  list                    List documents in the vault
+EOF
+  exit 1
+}
+
+(( $# )) || usage
+subcommand=$1
+shift
+
+case "$subcommand" in
+  add)
+    [[ $# -eq 2 ]] || usage
+    op document create "$1" --vault "$vault" --title "$2"
+    ;;
+  update)
+    [[ $# -eq 2 ]] || usage
+    # op takes the title first: op document edit <title> <file>
+    op document edit "$2" "$1" --vault "$vault"
+    ;;
+  get)
+    [[ $# -eq 2 ]] || usage
+    op document get "$1" --vault "$vault" --out-file "$2"
+    ;;
+  list)
+    [[ $# -eq 0 ]] || usage
+    op document list --vault "$vault"
+    ;;
+  *)
+    usage
+    ;;
+esac

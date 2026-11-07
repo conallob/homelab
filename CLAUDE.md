@@ -33,7 +33,8 @@ docs/
 ## Key Tools
 
 - `talosctl` — manage Talos nodes; set `TALOSCONFIG=cfg/talos/talosconfig`
-  - `controlplane.yaml`, `worker.yaml` and `talosconfig` hold cluster secrets: they are gitignored and stored in the 1Password vault `Homelab` (`op document get "talos/<generation>/<file>" --vault Homelab`)
+  - `controlplane.yaml`, `worker.yaml` and `talosconfig` hold cluster secrets: they are gitignored and stored in the 1Password vault `Homelab` as `talos/<generation>/<file>`
+- `bin/op-vault` — add, update and fetch gitignored sensitive files in the `Homelab` vault, e.g. `bin/op-vault get talos/20260920/talosconfig cfg/talos/talosconfig`
 - `kubectl` — Kubernetes cluster management
 - `helm` — deploys Cilium CNI and Tinkerbell
 - `rpiboot` — flash eMMC on CM4 via USB (see `docs/BOOTSTRAPPING.md`)
