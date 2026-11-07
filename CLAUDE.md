@@ -18,6 +18,7 @@ See `cfg/talos/CLAUDE.md` for detailed Talos operational commands and architectu
 ```
 cfg/
   talos/          # Live Talos machine configs + talosctl client config + Cilium config (see cfg/talos/CLAUDE.md)
+    nodes/        # Per-node patches: lab.taku.ie/ hardware-flavour labels (see docs/HARDWARE.md)
     20260919/     # Vestigial previous-generation configs and patches
   tinkerbell/     # Tinkerbell Helm values + Hardware CRDs for in-cluster bare-metal provisioning
   dnsmasq.conf    # DHCP/TFTP server config for PXE booting (runs on console server)
@@ -33,6 +34,7 @@ docs/
 ## Key Tools
 
 - `talosctl` — manage Talos nodes; set `TALOSCONFIG=cfg/talos/talosconfig`
+  - Control-plane nodes are schedulable (`cfg/talos/patch-controlplane-scheduling.yaml`), so the lab can scale down to just the control plane
   - `controlplane.yaml`, `worker.yaml` and `talosconfig` hold cluster secrets: they are gitignored and stored in the 1Password vault `Homelab` as `talos/<generation>/<file>`
 - `bin/op-vault` — add, update and fetch gitignored sensitive files in the `Homelab` vault, e.g. `bin/op-vault get talos/20260920/talosconfig cfg/talos/talosconfig`
 - `kubectl` — Kubernetes cluster management

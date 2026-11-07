@@ -60,6 +60,19 @@ tags:
 | ctrl-plane-3 |               | `88:a2:9e:51:a3:0a`  |                              | CM5016064         |
 | ctrl-plane-temp |            |                      | Raspberry Pi 5 Model B 8GB   | RPi5 (temporary)  |
 
+## Node Labels
+
+Each node carries hardware-flavour labels under the `lab.taku.ie/` prefix, set by its patch in `cfg/talos/nodes/<node>.yaml` and applied with `talosctl -n <ip> patch mc --patch @cfg/talos/nodes/<node>.yaml` (no reboot needed). Select by flavour, e.g. `kubectl get nodes -l lab.taku.ie/nvme!=none`.
+
+| **Node**   | `soc` | `ram` | `emmc` | `nvme` | `baseboard`          | `baseboard-manufacturer` |
+|------------|-------|-------|--------|--------|----------------------|--------------------------|
+| lab-node-1 | `cm4` | `8gb` | `32gb` | `128gb`| `computeblade-dev`   | `uptime-labs`            |
+| lab-node-2 | `cm4` | `8gb` | `32gb` | `1tb`  | `computeblade-basic` | `uptime-labs`            |
+| lab-node-3 | `cm4` | `8gb` | `32gb` | `1tb`  | `computeblade-basic` | `uptime-labs`            |
+| lab-node-4 | `cm4` | `8gb` | `32gb` | `none` | `computeblade-basic` | `uptime-labs`            |
+
+Values are measured from each node (`talosctl get disks`, `memorymodules`).
+
 ## Previous Deployment Details
 
 | **Node**   | **Switch Port** | **MAC Address**     | **Board**     | **Compute Module** |

@@ -1,0 +1,10 @@
+# Let workloads schedule on control-plane nodes, so the lab can scale down to
+# just the control plane. Also drop the exclude-from-external-load-balancers
+# label so Cilium can still announce LoadBalancer VIPs from these nodes.
+apiVersion: v1alpha1
+kind: KubeNodeConfig
+labels:
+  node.kubernetes.io/exclude-from-external-load-balancers:
+    $patch: delete
+taints:
+  $patch: delete
