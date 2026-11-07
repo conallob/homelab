@@ -17,7 +17,8 @@ See `cfg/talos/CLAUDE.md` for detailed Talos operational commands and architectu
 
 ```
 cfg/
-  talos/          # Talos machine configs + talosctl client config (see cfg/talos/CLAUDE.md)
+  talos/          # Live Talos machine configs + talosctl client config + Cilium config (see cfg/talos/CLAUDE.md)
+    20260919/     # Vestigial previous-generation configs and patches
   tinkerbell/     # Tinkerbell Helm values + Hardware CRDs for in-cluster bare-metal provisioning
   dnsmasq.conf    # DHCP/TFTP server config for PXE booting (runs on console server)
   compute-blade.ipxe  # iPXE boot menu served via TFTP; fetches Talos from factory.talos.dev
@@ -32,6 +33,7 @@ docs/
 ## Key Tools
 
 - `talosctl` — manage Talos nodes; set `TALOSCONFIG=cfg/talos/talosconfig`
+  - `controlplane.yaml`, `worker.yaml` and `talosconfig` hold cluster secrets: they are gitignored and stored in the 1Password vault `Homelab` (`op document get "talos/<generation>/<file>" --vault Homelab`)
 - `kubectl` — Kubernetes cluster management
 - `helm` — deploys Cilium CNI and Tinkerbell
 - `rpiboot` — flash eMMC on CM4 via USB (see `docs/BOOTSTRAPPING.md`)
@@ -59,10 +61,10 @@ Cilium is the CNI, installed via Helm with kube-proxy replacement (Talos runs wi
 ```bash
 # Upgrade Cilium (values drop SYS_MODULE, which Talos forbids)
 helm upgrade cilium cilium/cilium --version 1.20.3 -n kube-system \
-  -f cfg/talos/20260920/cilium-values.yaml
+  -f cfg/talos/cilium-values.yaml
 
 # VIP pool + L2 announcement policy
-kubectl apply -f cfg/talos/20260920/cilium-lb.yaml
+kubectl apply -f cfg/talos/cilium-lb.yaml
 ```
 
 ## Network Layout

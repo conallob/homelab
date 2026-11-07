@@ -40,8 +40,8 @@ with DHCP restricted to `192.168.6.10–192.168.6.254`. The upper half,
   `^end0$`
 * Helm values: `l2announcements.enabled: true`, `devices: end0`
 
-Config lives in `cfg/talos/20260920/cilium-values.yaml` and
-`cfg/talos/20260920/cilium-lb.yaml`.
+Config lives in `cfg/talos/cilium-values.yaml` and
+`cfg/talos/cilium-lb.yaml`.
 
 ## Consequences
 

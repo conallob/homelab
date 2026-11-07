@@ -1,0 +1,8 @@
+machine:
+  install:
+    disk: /dev/mmcblk0
+  nodeLabels:
+    kubernetes.io/arch: arm64
+    node.kubernetes.io/soc: rpi5
+    node.kubernetes.io/ram: 8gb
+    node.kubernetes.io/baseboard: rpi5

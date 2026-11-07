@@ -108,7 +108,7 @@ talosctl kubeconfig --nodes <control-plane-IP>
 ## Install CNI
 
 Install Cilium via Helm per https://docs.siderolabs.com/kubernetes-guides/cni/deploying-cilium, without `kube-proxy` and with `gateway-api`.
-The Talos machine config must already set `cluster.network.cni.name: none` and disable kube-proxy (see `cfg/talos/20260920/cilium-patch.yaml`).
+The Talos machine config must already set `cluster.network.cni.name: none` and disable kube-proxy (see `cfg/talos/cilium-patch.yaml`).
 
 > [!warning]
 > Never install the chart without `cilium-values.yaml`. The chart defaults request `SYS_MODULE`, which Talos drops, and try to reach the API server via the `10.96.0.1` ClusterIP, which doesn't route without kube-proxy. Every agent crashloops and all nodes go `NotReady`.
@@ -125,12 +125,12 @@ done
 ```
 helm repo add cilium https://helm.cilium.io/ && helm repo update cilium
 helm upgrade --install cilium cilium/cilium --version 1.20.3 -n kube-system \
-  -f cfg/talos/20260920/cilium-values.yaml
+  -f cfg/talos/cilium-values.yaml
 ```
 
 3. Create the LoadBalancer VIP pool (`192.168.7.0/24`) and L2 announcement policy. See `docs/decisions/002-cilium-l2-vips.md`
 ```
-kubectl apply -f cfg/talos/20260920/cilium-lb.yaml
+kubectl apply -f cfg/talos/cilium-lb.yaml
 kubectl get ciliumloadbalancerippools   # IPS AVAILABLE should be 254
 ```
 

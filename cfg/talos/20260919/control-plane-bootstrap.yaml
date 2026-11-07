@@ -1,13 +1,13 @@
 machine:
   install:
-    disk: /dev/mmcblk0
+    disk: /dev/nvme0n1
   nodeLabels:
     node-role.kubernetes.io/control-plane: ""
     kubernetes.io/arch: arm64
-    node.kubernetes.io/soc: cm5
-    node.kubernetes.io/ram: 16gb
-    node.kubernetes.io/baseboard: cm4-io-base-b
-    node.kubernetes.io/baseboard-manufacturer: waveshare
+    node.kubernetes.io/soc: cm4
+    node.kubernetes.io/ram: 8gb
+    node.kubernetes.io/baseboard: computeblade-dev
+    node.kubernetes.io/baseboard-manufacturer: uptime-labs
   network:
     nameservers:
       - 192.168.1.3
@@ -16,9 +16,10 @@ machine:
       - 1.1.1.1
     interfaces:
       - interface: end0
-        dhcp: true
-        vip:
-          ip: 192.168.6.250
+        dhcp:
+          true
+          #vip:
+          #ip: 192.168.6.250
   time:
     servers:
       - 162.159.200.1

@@ -1,0 +1,5 @@
+# Talos configs embed cluster CA keys, tokens and admin client certs.
+# Stored in the 1Password vault "Homelab" instead.
+cfg/talos/**/controlplane.yaml
+cfg/talos/**/worker.yaml
+cfg/talos/**/talosconfig
