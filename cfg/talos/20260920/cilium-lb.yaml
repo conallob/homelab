@@ -1,0 +1,20 @@
+# LoadBalancer VIPs: 192.168.7.0/24, the upper half of the lab 192.168.6.0/23.
+# DHCP is restricted to 192.168.6.0/24, so this block never collides with leases.
+apiVersion: cilium.io/v2
+kind: CiliumLoadBalancerIPPool
+metadata:
+  name: lab-vips
+spec:
+  blocks:
+    # Skip .7.255, the /23 broadcast address
+    - start: 192.168.7.1
+      stop: 192.168.7.254
+---
+apiVersion: cilium.io/v2alpha1
+kind: CiliumL2AnnouncementPolicy
+metadata:
+  name: lab-vips
+spec:
+  interfaces:
+    - ^end0$
+  loadBalancerIPs: true

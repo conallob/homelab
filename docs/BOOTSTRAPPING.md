@@ -107,22 +107,31 @@ talosctl kubeconfig --nodes <control-plane-IP>
 
 ## Install CNI
 
-Install Cilium via CLI per https://www.talos.dev/v1.11/kubernetes-guides/network/deploying-cilium/#without-kube-proxy
+Install Cilium via Helm per https://docs.siderolabs.com/kubernetes-guides/cni/deploying-cilium, without `kube-proxy` and with `gateway-api`.
+The Talos machine config must already set `cluster.network.cni.name: none` and disable kube-proxy (see `cfg/talos/20260920/cilium-patch.yaml`).
 
-1. Install Cilium via `cilium-cli`, without `kube-proxy` and with `gateway-api`
+> [!warning]
+> Never install the chart without `cilium-values.yaml`. The chart defaults request `SYS_MODULE`, which Talos drops, and try to reach the API server via the `10.96.0.1` ClusterIP, which doesn't route without kube-proxy. Every agent crashloops and all nodes go `NotReady`.
+
+1. Install the Gateway API v1.6.3 standard CRDs (must exist before Cilium starts)
 ```
-cilium install \
-    --set ipam.mode=kubernetes \
-    --set kubeProxyReplacement=true \
-    --set securityContext.capabilities.ciliumAgent="{CHOWN,KILL,NET_ADMIN,NET_RAW,IPC_LOCK,SYS_ADMIN,SYS_RESOURCE,DAC_OVERRIDE,FOWNER,SETGID,SETUID}" \
-    --set securityContext.capabilities.cleanCiliumState="{NET_ADMIN,SYS_ADMIN,SYS_RESOURCE}" \
-    --set cgroup.autoMount.enabled=false \
-    --set cgroup.hostRoot=/sys/fs/cgroup \
-    --set k8sServiceHost=localhost \
-    --set k8sServicePort=7445 \
-    --set gatewayAPI.enabled=true \
-    --set gatewayAPI.enableAlpn=true \
-    --set gatewayAPI.enableAppProtocol=true
+BASE=https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.6.3/config/crd/standard
+for crd in gatewayclasses gateways httproutes referencegrants grpcroutes backendtlspolicies tlsroutes; do
+  kubectl apply --server-side -f $BASE/gateway.networking.k8s.io_${crd}.yaml
+done
+```
+
+2. Install Cilium with the Talos values: KubePrism (`localhost:7445`) as the API endpoint, kube-proxy replacement, Talos-safe capabilities, Gateway API and L2 announcements on `end0`
+```
+helm repo add cilium https://helm.cilium.io/ && helm repo update cilium
+helm upgrade --install cilium cilium/cilium --version 1.20.3 -n kube-system \
+  -f cfg/talos/20260920/cilium-values.yaml
+```
+
+3. Create the LoadBalancer VIP pool (`192.168.7.0/24`) and L2 announcement policy. See `docs/decisions/002-cilium-l2-vips.md`
+```
+kubectl apply -f cfg/talos/20260920/cilium-lb.yaml
+kubectl get ciliumloadbalancerippools   # IPS AVAILABLE should be 254
 ```
 
 <details>

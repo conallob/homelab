@@ -52,15 +52,29 @@ kubectl apply -f cfg/tinkerbell/hardware.yaml
 - LoadBalancer IP: `192.168.6.127` (configured in `cfg/tinkerbell/values.yaml`)
 - Hardware definitions in `cfg/tinkerbell/hardware.yaml` map MAC addresses → DHCP IPs → iPXE URLs
 
+## Cilium
+
+Cilium is the CNI, installed via Helm with kube-proxy replacement (Talos runs with `cluster.network.cni.name: none` and kube-proxy disabled). It reaches the API server via KubePrism on `localhost:7445`. LoadBalancer Services get VIPs from `192.168.7.0/24` via L2 announcements on `end0` (see `docs/decisions/002-cilium-l2-vips.md`).
+
+```bash
+# Upgrade Cilium (values drop SYS_MODULE, which Talos forbids)
+helm upgrade cilium cilium/cilium --version 1.20.3 -n kube-system \
+  -f cfg/talos/20260920/cilium-values.yaml
+
+# VIP pool + L2 announcement policy
+kubectl apply -f cfg/talos/20260920/cilium-lb.yaml
+```
+
 ## Network Layout
 
 | Purpose | IP / Range |
 |---------|-----------|
-| Lab subnet | `192.168.6.0/24` (domain: `lab.taku.ie`) |
-| DHCP range | `192.168.6.10–192.168.6.128` |
+| Lab subnet | `192.168.6.0/23` (domain: `lab.taku.ie`) |
+| DHCP range | `192.168.6.10–192.168.6.254` |
 | Control plane VIP | `192.168.6.250` |
 | Console server / dnsmasq | `192.168.6.254` |
 | Tinkerbell LoadBalancer | `192.168.6.127` |
+| Cilium LoadBalancer VIPs (L2) | `192.168.7.1–192.168.7.254` |
 
 VLAN 5 is used for the lab network on the Unifi switch.
 
