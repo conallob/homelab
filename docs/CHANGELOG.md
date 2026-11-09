@@ -12,6 +12,63 @@ tags:
 # Changelog
 
 
+## 2026-11-09
+
+* Stood up External Secrets Operator (ESO) + a self-hosted 1Password Connect
+  server in `homelab-apps`, backed by the `Homelab` vault on
+  `taku-ie.1password.com` — see
+  [conallob/homelab-apps#6](https://github.com/conallob/homelab-apps/pull/6)
+  and [conallob/homelab-apps#7](https://github.com/conallob/homelab-apps/pull/7).
+  cert-manager's `cloudflare-api-token` Secret now syncs from 1Password via
+  an `ExternalSecret` instead of a hand-run `kubectl create secret`, as the
+  first real consumer.
+* Separately, audited the Cloudflare account for every CNAME pointing at
+  `metis.asclepian.ie` (7 found, across `asclepian.ie`, `conall.net`, and
+  `taku.ie`) ahead of migrating that VM's vhosts elsewhere, and deleted 3
+  confirmed-dead CNAMEs turned up by the same sweep (`nagios2`/`nagios3`
+  .asclepian.ie, `download.infocad.ie`).
+* **The real debugging story:** the `onepassword-connect` Deployment sat in
+  `ContainerCreating` for 21+ hours, always citing a missing Secret named
+  `op-credentials` — the upstream chart's hardcoded default — never the
+  `onepassword-connect` Secret our `values.yaml` was supposed to select via
+  `connect.credentialsName`. Row of dead ends before the real cause:
+  - First suspected the hand-created bootstrap Secret had the wrong name or
+    field key (it didn't — confirmed correct both times).
+  - Then suspected Argo CD sync staleness or an Argo Rollouts field-manager
+    fight over the Deployment's pod spec (ruled out: `--show-managed-fields`
+    showed only `argocd-controller` and `kube-controller-manager` touching
+    the object; a `workloadRef` Rollout doesn't even carry its own
+    `spec.template`, so it was never in the running).
+  - **Actual cause, found only once `get.helm.sh` was allowed through this
+    session's egress filter and a real `helm template` became possible**:
+    `--set connect.credentialsName=x` had *zero* effect on the rendered
+    manifest — proof the override path itself was wrong, not a sync issue.
+    Dumping the fully-merged `.Values` via a throwaway debug template
+    revealed why: the upstream `connect-helm-charts` "connect" subchart's
+    *own* `values.yaml` namespaces its Connect-server config under a
+    top-level `connect:` key (sibling to its `operator:` key, for the
+    optional Kubernetes Operator). Since our dependency alias is *also*
+    `connect`, the real override path from our parent chart is
+    `connect.connect.credentialsName` — ours was one level too shallow and
+    silently landed next to the real default instead of overriding it.
+  - Lesson: when a Helm subchart override appears to do nothing, don't trust
+    static reading of the subchart's templates alone — `helm template --set
+    <path>=<sentinel>` against the *real* fetched chart is the fastest way
+    to prove whether a values path is even reaching the template, before
+    chasing GitOps-layer explanations (sync lag, controller conflicts) that
+    turned out to be red herrings here.
+  - Also discovered along the way: `1Password/connect-helm` (the chart repo
+    URL used throughout 1Password's own docs search results) no longer
+    exists — the project renamed to `1Password/connect-helm-charts`
+    sometime before this session, with the chart now at `charts/connect`.
+* Fixed in
+  [conallob/homelab-apps#7](https://github.com/conallob/homelab-apps/pull/7);
+  confirmed working end-to-end after merge:
+  `kubectl get clustersecretstore onepassword -n external-secrets` → `Valid`
+  / `Ready: True`, and
+  `kubectl -n cert-manager get externalsecret cloudflare-api-token` →
+  `SecretSynced` / `Ready: True`.
+
 ## 2026-11-07
 
 * All nodes back to `Ready` after the flannel → Cilium migration. Root cause:
@@ -27,7 +84,6 @@ tags:
 * Lab VLAN widened to `192.168.6.0/23`; `192.168.7.0/24` is now the Cilium
   LoadBalancer VIP netblock, announced via L2 on `end0`. See
   `decisions/002-cilium-l2-vips.md`.
-
 
 ## 2026-09-19
 
