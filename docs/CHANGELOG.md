@@ -68,6 +68,74 @@ tags:
   / `Ready: True`, and
   `kubectl -n cert-manager get externalsecret cloudflare-api-token` →
   `SecretSynced` / `Ready: True`.
+* Added `apps/node-exporter` (DaemonSet) and `apps/kube-state-metrics` to
+  `homelab-apps` — see
+  [conallob/homelab-apps#8](https://github.com/conallob/homelab-apps/pull/8).
+  `node-exporter`'s image tag is pinned explicitly (`image.tag`), rather
+  than left to default to `v<Chart.AppVersion>`, so the binary version
+  doesn't silently drift on every chart bump.
+* `node-exporter`'s DaemonSet sat at `DESIRED: 4, CURRENT: 0` for hours —
+  never actually creating a single pod. Root cause: the cluster enforces
+  Pod Security Admission `baseline` by default, which forbids
+  `hostNetwork`/`hostPID`/hostPath volumes/hostPort, all of which
+  `node_exporter` legitimately needs. Fixed by labeling the namespace
+  `pod-security.kubernetes.io/enforce: privileged` explicitly — the
+  standard Kubernetes mechanism for opting one namespace out of a
+  cluster-wide default, rather than weakening it globally. See
+  [conallob/homelab-apps#9](https://github.com/conallob/homelab-apps/pull/9).
+  This pattern (PSA `baseline` silently blocking a legitimately
+  privileged workload, with no pods — not even failing ones — to
+  `kubectl describe`) is worth remembering for the next host-level
+  exporter or agent added to this cluster.
+* Rewrote Tinkerbell end to end — twice. First pass
+  ([conallob/homelab#5](https://github.com/conallob/homelab/pull/5)) fixed
+  three real bugs sitting in the previously-committed, never-actually-used
+  `cfg/tinkerbell/{values,hardware}.yaml`: a `nodeSelector` pinned to a
+  node name from a previous cluster generation, a MAC reassigned to a
+  different node after the 2026-09 blade swap (`HARDWARE.md` had already
+  documented the swap; the Tinkerbell config just never got updated to
+  match), and a `Hardware` entry duplicating both the `metadata.name` and
+  `mac` of another — copy-paste damage. Also migrated off the deprecated
+  per-component `stack` chart to the current unified `tinkerbell` chart
+  (v0.25.0), configured `proxy` DHCP mode (the Unifi router keeps owning
+  real leases; Tinkerbell only supplies PXE boot options as a second
+  responder), and pinned smee to `lab-node-1` via `nodeSelector` — its
+  macvlan DHCP listener needs to be on the CM4s' L2 segment, since a
+  Cilium-announced LoadBalancer Service can't deliver raw broadcast DHCP
+  traffic into a pod the way it can unicast traffic to a VIP. Verified
+  every one of these by actually cloning `tinkerbell/tinkerbell` and
+  running `helm template` against the real chart, not by reading the
+  values schema and guessing — caught the chart's default `kube-vip`
+  `loadBalancerClass` (this cluster uses Cilium's LB-IPAM, no kube-vip
+  installed) and the `artifactsFileServer` requirement for HookOS (unused
+  here — every node chainloads straight to Talos via its own `Hardware`
+  object) this way.
+* Second pass: moved Tinkerbell again, this time from a manual
+  `helm install` documented in this repo into `homelab-apps` as
+  `apps/tinkerbell`, once it became clear nothing was actually running
+  that install command — Argo CD had no idea Tinkerbell was supposed to
+  exist. See
+  [conallob/homelab-apps#10](https://github.com/conallob/homelab-apps/pull/10)
+  and [conallob/homelab#6](https://github.com/conallob/homelab/pull/6) (the
+  cleanup removing the now-duplicate `cfg/tinkerbell/` from this repo).
+  Rendering the real chart again caught a second PSA `baseline` rejection,
+  same shape as `node-exporter`'s: Tinkerbell's Deployment runs
+  `hostPID: true` plus a `privileged: true` init container (for the same
+  macvlan setup), needing the identical namespace-level `privileged`
+  exemption.
+* Also added `Hardware` objects for the 3 CM5 control-plane nodes
+  (`ctrl-1`..`ctrl-3`, `192.168.6.200`–`.202`), but with `allowPXE: false`
+  and no `netboot.ipxe.url` — CM5 is a different SoC (BCM2712 vs the CM4s'
+  BCM2711) and CM5/Pi5 Talos support was shelved as too buggy elsewhere
+  this session (unresolved GRUB→kernel hang); there's no validated image
+  to point them at yet. While wiring these up, caught a real Helm
+  templating bug of our own: `{{ .allowPXE | default true }}` silently
+  turned every `false` back into `true`, because Sprig's `default` treats
+  Go's bool zero-value as "empty" and substitutes over it. All three
+  `ctrl-*` entries rendered `allowPXE: true` on the first pass despite
+  `false` being set in the data. Fixed by setting the field explicitly on
+  every entry instead of relying on a fallback — worth remembering
+  whenever a Helm template takes a boolean value with a `default`.
 
 ## 2026-11-07
 
