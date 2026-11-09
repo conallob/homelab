@@ -20,7 +20,6 @@ cfg/
   talos/          # Live Talos machine configs + talosctl client config + Cilium config (see cfg/talos/CLAUDE.md)
     nodes/        # Per-node patches: lab.taku.ie/ hardware-flavour labels (see docs/HARDWARE.md)
     20260919/     # Vestigial previous-generation configs and patches
-  tinkerbell/     # Tinkerbell Helm values + Hardware CRDs for in-cluster bare-metal provisioning
   dnsmasq.conf    # DHCP/TFTP server config for PXE booting (runs on console server)
   compute-blade.ipxe  # iPXE boot menu served via TFTP; fetches Talos from factory.talos.dev
 docs/
@@ -38,33 +37,18 @@ docs/
   - `controlplane.yaml`, `worker.yaml` and `talosconfig` hold cluster secrets: they are gitignored and stored in the 1Password vault `Homelab` as `talos/<generation>/<file>`
 - `bin/op-vault` — add, update and fetch gitignored sensitive files in the `Homelab` vault, e.g. `bin/op-vault get talos/20260920/talosconfig cfg/talos/talosconfig`
 - `kubectl` — Kubernetes cluster management
-- `helm` — deploys Cilium CNI and Tinkerbell
+- `helm` — deploys Cilium CNI
 - `rpiboot` — flash eMMC on CM4 via USB (see `docs/BOOTSTRAPPING.md`)
 
 ## Tinkerbell
 
-Tinkerbell is deployed **inside the cluster** via the unified `tinkerbell` chart
-(not the deprecated per-component `stack` chart — see
-[HELM_VALUES_MIGRATION.md](https://github.com/tinkerbell/tinkerbell/blob/main/docs/technical/HELM_VALUES_MIGRATION.md)
-if `cfg/tinkerbell/values.yaml` ever looks unfamiliar again). It runs in `proxy`
-DHCP mode: the Unifi router still owns real DHCP leases for `192.168.6.0/23`;
-Tinkerbell only supplies PXE boot options as a second responder, matched to
-each `Hardware` object by the IP the router already leased.
-
-```bash
-# Deploy / upgrade Tinkerbell
-TRUSTED_PROXIES=$(kubectl get nodes -o jsonpath='{.items[*].spec.podCIDR}' | tr ' ' ',')
-helm upgrade --install tinkerbell oci://ghcr.io/tinkerbell/charts/tinkerbell \
-  --version 0.25.0 -f cfg/tinkerbell/values.yaml -n tinkerbell --create-namespace \
-  --set "trustedProxies={${TRUSTED_PROXIES}}"
-
-# Apply Hardware objects after deploy
-kubectl apply -f cfg/tinkerbell/hardware.yaml
-```
-
-- LoadBalancer IP: `192.168.7.67` (Cilium-announced VIP, `cfg/tinkerbell/values.yaml`'s `publicIP` — Tinkerbell's own HTTP/API services, not DHCP/TFTP)
-- Smee (DHCP/TFTP) is pinned via `nodeSelector` to `lab-node-1`, the node physically on the CM4s' L2 segment — its macvlan listener (`deployment.init`) needs that, a Cilium-announced Service VIP can't receive raw broadcast DHCP
-- `cfg/tinkerbell/hardware.yaml` has one `Hardware` object per `lab-node-1`..`6`, keyed by MAC, with its Unifi-reserved IP and a pinned Talos schematic/version in `netboot.ipxe.url` — bump that URL deliberately, it's independent of `cfg/compute-blade.ipxe`'s own `talos_version`
+Tinkerbell is Argo CD-managed, not a manual `helm install` from this repo —
+see `apps/tinkerbell` in [homelab-apps](https://github.com/conallob/homelab-apps)
+for its chart, values, `Hardware` objects, and the reasoning behind each
+(`proxy` DHCP mode alongside the Unifi router, smee pinned to `lab-node-1`
+for its macvlan listener, the `192.168.7.67` Cilium LB VIP). Node inventory
+(MACs, Unifi-reserved IPs) still lives here in `docs/HARDWARE.md`; update
+both if a reservation or a board swaps blades.
 
 ## Cilium
 
