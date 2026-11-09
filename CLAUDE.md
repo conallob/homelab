@@ -43,19 +43,28 @@ docs/
 
 ## Tinkerbell
 
-Tinkerbell is deployed **inside the cluster** (not as a standalone service) via Helm. Only the `smee` component is enabled — it handles DHCP and iPXE for bare-metal nodes.
+Tinkerbell is deployed **inside the cluster** via the unified `tinkerbell` chart
+(not the deprecated per-component `stack` chart — see
+[HELM_VALUES_MIGRATION.md](https://github.com/tinkerbell/tinkerbell/blob/main/docs/technical/HELM_VALUES_MIGRATION.md)
+if `cfg/tinkerbell/values.yaml` ever looks unfamiliar again). It runs in `proxy`
+DHCP mode: the Unifi router still owns real DHCP leases for `192.168.6.0/23`;
+Tinkerbell only supplies PXE boot options as a second responder, matched to
+each `Hardware` object by the IP the router already leased.
 
 ```bash
 # Deploy / upgrade Tinkerbell
+TRUSTED_PROXIES=$(kubectl get nodes -o jsonpath='{.items[*].spec.podCIDR}' | tr ' ' ',')
 helm upgrade --install tinkerbell oci://ghcr.io/tinkerbell/charts/tinkerbell \
-  --version <version> -f cfg/tinkerbell/values.yaml -n tinkerbell --create-namespace
+  --version 0.25.0 -f cfg/tinkerbell/values.yaml -n tinkerbell --create-namespace \
+  --set "trustedProxies={${TRUSTED_PROXIES}}"
 
-# Apply Hardware CRDs after deploy
+# Apply Hardware objects after deploy
 kubectl apply -f cfg/tinkerbell/hardware.yaml
 ```
 
-- LoadBalancer IP: `192.168.6.127` (configured in `cfg/tinkerbell/values.yaml`)
-- Hardware definitions in `cfg/tinkerbell/hardware.yaml` map MAC addresses → DHCP IPs → iPXE URLs
+- LoadBalancer IP: `192.168.7.67` (Cilium-announced VIP, `cfg/tinkerbell/values.yaml`'s `publicIP` — Tinkerbell's own HTTP/API services, not DHCP/TFTP)
+- Smee (DHCP/TFTP) is pinned via `nodeSelector` to `lab-node-1`, the node physically on the CM4s' L2 segment — its macvlan listener (`deployment.init`) needs that, a Cilium-announced Service VIP can't receive raw broadcast DHCP
+- `cfg/tinkerbell/hardware.yaml` has one `Hardware` object per `lab-node-1`..`6`, keyed by MAC, with its Unifi-reserved IP and a pinned Talos schematic/version in `netboot.ipxe.url` — bump that URL deliberately, it's independent of `cfg/compute-blade.ipxe`'s own `talos_version`
 
 ## Cilium
 
@@ -78,7 +87,7 @@ kubectl apply -f cfg/talos/cilium-lb.yaml
 | DHCP range | `192.168.6.10–192.168.6.254` |
 | Control plane VIP | `192.168.6.250` |
 | Console server / dnsmasq | `192.168.6.254` |
-| Tinkerbell LoadBalancer | `192.168.6.127` |
+| Tinkerbell LoadBalancer | `192.168.7.67` |
 | Cilium LoadBalancer VIPs (L2) | `192.168.7.1–192.168.7.254` |
 
 VLAN 5 is used for the lab network on the Unifi switch.
