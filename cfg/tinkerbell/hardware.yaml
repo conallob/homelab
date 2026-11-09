@@ -30,7 +30,7 @@ spec:
         allowPXE: true
         allowWorkflow: false
         ipxe:
-          url: https://pxe.factory.talos.dev/pxe/6b700850e84fbbaa67e3558d1d8599f336f36eb063b3a3763c97f7bc7b07a760/v1.14.0/metal-arm64
+          url: https://pxe.factory.talos.dev/pxe/6b700850e84fbbaa67e3558d1d8599f336f36eb063b3a3763c97f7bc7b07a760/v1.14.4/metal-arm64
 ---
 apiVersion: "tinkerbell.org/v1alpha1"
 kind: Hardware
@@ -52,7 +52,7 @@ spec:
         allowPXE: true
         allowWorkflow: false
         ipxe:
-          url: https://pxe.factory.talos.dev/pxe/6b700850e84fbbaa67e3558d1d8599f336f36eb063b3a3763c97f7bc7b07a760/v1.14.0/metal-arm64
+          url: https://pxe.factory.talos.dev/pxe/6b700850e84fbbaa67e3558d1d8599f336f36eb063b3a3763c97f7bc7b07a760/v1.14.4/metal-arm64
 ---
 apiVersion: "tinkerbell.org/v1alpha1"
 kind: Hardware
@@ -74,7 +74,7 @@ spec:
         allowPXE: true
         allowWorkflow: false
         ipxe:
-          url: https://pxe.factory.talos.dev/pxe/6b700850e84fbbaa67e3558d1d8599f336f36eb063b3a3763c97f7bc7b07a760/v1.14.0/metal-arm64
+          url: https://pxe.factory.talos.dev/pxe/6b700850e84fbbaa67e3558d1d8599f336f36eb063b3a3763c97f7bc7b07a760/v1.14.4/metal-arm64
 ---
 apiVersion: "tinkerbell.org/v1alpha1"
 kind: Hardware
@@ -96,7 +96,7 @@ spec:
         allowPXE: true
         allowWorkflow: false
         ipxe:
-          url: https://pxe.factory.talos.dev/pxe/6b700850e84fbbaa67e3558d1d8599f336f36eb063b3a3763c97f7bc7b07a760/v1.14.0/metal-arm64
+          url: https://pxe.factory.talos.dev/pxe/6b700850e84fbbaa67e3558d1d8599f336f36eb063b3a3763c97f7bc7b07a760/v1.14.4/metal-arm64
 ---
 apiVersion: "tinkerbell.org/v1alpha1"
 kind: Hardware
@@ -118,7 +118,7 @@ spec:
         allowPXE: true
         allowWorkflow: false
         ipxe:
-          url: https://pxe.factory.talos.dev/pxe/6b700850e84fbbaa67e3558d1d8599f336f36eb063b3a3763c97f7bc7b07a760/v1.14.0/metal-arm64
+          url: https://pxe.factory.talos.dev/pxe/6b700850e84fbbaa67e3558d1d8599f336f36eb063b3a3763c97f7bc7b07a760/v1.14.4/metal-arm64
 ---
 apiVersion: "tinkerbell.org/v1alpha1"
 kind: Hardware
@@ -140,4 +140,4 @@ spec:
         allowPXE: true
         allowWorkflow: false
         ipxe:
-          url: https://pxe.factory.talos.dev/pxe/6b700850e84fbbaa67e3558d1d8599f336f36eb063b3a3763c97f7bc7b07a760/v1.14.0/metal-arm64
+          url: https://pxe.factory.talos.dev/pxe/6b700850e84fbbaa67e3558d1d8599f336f36eb063b3a3763c97f7bc7b07a760/v1.14.4/metal-arm64
