@@ -81,7 +81,7 @@ VLAN 5 is used for the lab network on the Unifi switch.
 Two provisioning paths exist (see `docs/decisions/000-provisioning.md` for rationale):
 
 1. **Direct PXE (current):** dnsmasq on console server → `cfg/compute-blade.ipxe` → Talos kernel from `factory.talos.dev` → `talosctl apply-config`
-2. **Tinkerbell (in progress):** Tinkerbell smee in-cluster handles DHCP/iPXE for new nodes, referencing `cfg/tinkerbell/hardware.yaml`
+2. **Tinkerbell (in progress):** Tinkerbell smee in-cluster handles DHCP/iPXE for new nodes, referencing the `Hardware` objects in [homelab-apps](https://github.com/conallob/homelab-apps)'s `apps/tinkerbell`
 
 ## EEPROM Boot Order
 
