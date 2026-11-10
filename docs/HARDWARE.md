@@ -75,6 +75,8 @@ Each node carries hardware-flavour labels under the `lab.taku.ie/` prefix, set b
 
 Values are measured from each node (`talosctl get disks`, `memorymodules`).
 
+`lab.taku.ie/talos-version` (e.g. `v1.14.4`) tracks the Talos version each node runs. Unlike the labels above it is **not** in `cfg/talos/nodes/<node>.yaml`: machine config would pin a stale value. Instead a post-upgrade hook on the `TalosUpgrade` in [homelab-apps](https://github.com/conallob/homelab-apps)'s `apps/tuppr` sets it from each node's reported `osImage` at the end of every upgrade run. Check it with `kubectl get nodes -L lab.taku.ie/talos-version`.
+
 ## Previous Deployment Details
 
 | **Node**   | **Switch Port** | **MAC Address**     | **Board**     | **Compute Module** |
