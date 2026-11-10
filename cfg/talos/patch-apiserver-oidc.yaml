@@ -1,0 +1,48 @@
+# Let the Kubernetes API server accept Google sign-ins, for Headlamp
+# (apps/headlamp in homelab-apps). Control-plane nodes only.
+#
+# Uses the structured AuthenticationConfiguration (rather than --oidc-* flags)
+# because Google ID tokens carry no groups claim: the CEL expression below
+# derives a group from the email domain instead.
+#   user:  google:<email>          (verified emails only)
+#   group: google:taku.ie          (any @taku.ie address)
+# RBAC for these names lives in homelab-apps/apps/headlamp/templates/rbac.yaml.
+#
+# Before applying, replace REPLACE_WITH_GOOGLE_CLIENT_ID with the OAuth client
+# ID Headlamp uses (the same value as the client-id field of the 1Password item
+# headlamp/google-oauth). Apply to ONE control-plane node first and confirm
+# `kubectl get nodes` still works before doing the rest; a bad file stops that
+# node's kube-apiserver starting. Client-certificate kubeconfigs and
+# talosctl are unaffected.
+#
+#   talosctl patch mc --nodes <control-plane-ip> \
+#     --patch @cfg/talos/patch-apiserver-oidc.yaml
+machine:
+  files:
+    - path: /var/etc/kubernetes/auth/authentication-config.yaml
+      permissions: 0o444
+      op: create
+      content: |
+        apiVersion: apiserver.config.k8s.io/v1beta1
+        kind: AuthenticationConfiguration
+        jwt:
+          - issuer:
+              url: https://accounts.google.com
+              audiences:
+                - REPLACE_WITH_GOOGLE_CLIENT_ID
+            claimValidationRules:
+              - expression: "claims.email_verified == true"
+                message: only verified Google email addresses are accepted
+            claimMappings:
+              username:
+                expression: "'google:' + claims.email"
+              groups:
+                expression: "claims.email.endsWith('@taku.ie') ? ['google:taku.ie'] : []"
+cluster:
+  apiServer:
+    extraArgs:
+      authentication-config: /etc/kubernetes/auth/authentication-config.yaml
+    extraVolumes:
+      - hostPath: /var/etc/kubernetes/auth
+        mountPath: /etc/kubernetes/auth
+        readonly: true
