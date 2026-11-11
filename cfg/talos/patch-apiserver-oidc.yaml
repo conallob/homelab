@@ -5,8 +5,13 @@
 # because Google ID tokens carry no groups claim: the CEL expression below
 # derives a group from the email domain instead.
 #   user:  google:<email>          (verified emails only)
-#   group: google:taku.ie          (any @taku.ie address)
-# RBAC for these names lives in homelab-apps/apps/headlamp/templates/rbac.yaml.
+#   group: google:taku.ie          (any verified @taku.ie address)
+# Only two kinds of account are let in at all; every other Google account is
+# rejected here (401) rather than merely having no RBAC rights:
+#   - conall@gmail.com and conall@taku.ie (admins, bound in RBAC)
+#   - any other @taku.ie address (read only, bound in RBAC)
+# RBAC for these names lives in homelab-apps/apps/headlamp/templates/rbac.yaml;
+# keep the two admin addresses below in step with it.
 #
 # Before applying, replace REPLACE_WITH_GOOGLE_CLIENT_ID with the OAuth client
 # ID Headlamp uses (the same value as the client-id field of the 1Password item
@@ -38,6 +43,9 @@ machine:
                 expression: "'google:' + claims.email"
               groups:
                 expression: "claims.email.endsWith('@taku.ie') ? ['google:taku.ie'] : []"
+            userValidationRules:
+              - expression: "user.username in ['google:conall@gmail.com', 'google:conall@taku.ie'] || 'google:taku.ie' in user.groups"
+                message: only conall@gmail.com, conall@taku.ie and @taku.ie accounts may sign in
 cluster:
   apiServer:
     extraArgs:
