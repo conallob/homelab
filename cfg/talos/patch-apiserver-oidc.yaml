@@ -13,9 +13,11 @@
 # RBAC for these names lives in homelab-apps/apps/headlamp/templates/rbac.yaml;
 # keep the two admin addresses below in step with it.
 #
-# Before applying, replace REPLACE_WITH_GOOGLE_CLIENT_ID with the OAuth client
-# ID Headlamp uses (the same value as the client-id field of the 1Password item
-# headlamp/google-oauth). Apply to ONE control-plane node first and confirm
+# The audience below is the OAuth client ID Headlamp uses (the client-id field
+# of the 1Password item headlamp/google-oauth). A client ID is public, not a
+# secret.
+#
+# Apply to ONE control-plane node first and confirm
 # `kubectl get nodes` still works before doing the rest; a bad file stops that
 # node's kube-apiserver starting. Client-certificate kubeconfigs and
 # talosctl are unaffected.
@@ -34,7 +36,7 @@ machine:
           - issuer:
               url: https://accounts.google.com
               audiences:
-                - REPLACE_WITH_GOOGLE_CLIENT_ID
+                - 681312183269-bq4jvup0v9vog0k79mqceke8edr1nbfk.apps.googleusercontent.com
             claimValidationRules:
               - expression: "claims.email_verified == true"
                 message: only verified Google email addresses are accepted
