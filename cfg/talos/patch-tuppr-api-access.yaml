@@ -1,0 +1,13 @@
+# Lets tuppr (apps/tuppr in homelab-apps), running in the "tuppr" namespace,
+# call the Talos API with os:admin so it can upgrade nodes. Apply to EVERY node,
+# control plane and workers, before the tuppr app syncs:
+#   talosctl -n <ip> patch mc --patch @cfg/talos/patch-tuppr-api-access.yaml
+# allowedKubernetesNamespaces must match the namespace tuppr runs in.
+machine:
+  features:
+    kubernetesTalosAPIAccess:
+      enabled: true
+      allowedRoles:
+        - os:admin
+      allowedKubernetesNamespaces:
+        - tuppr
