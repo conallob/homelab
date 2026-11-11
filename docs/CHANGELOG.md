@@ -12,6 +12,16 @@ tags:
 # Changelog
 
 
+## 2026-11-10
+
+* Added `cfg/talos/patch-logging.yaml`: nodes send Talos service logs
+  (`json_lines` over TCP to `127.0.0.1:6170`) to the vector DaemonSet in
+  `homelab-apps` (`apps/vector`), which forwards them, along with container
+  logs, to GCP Cloud Logging. Apply with
+  `talosctl patch mc --nodes <ip> --patch @cfg/talos/patch-logging.yaml`
+  once vector is running, since nothing listens on that port before then
+  (Talos retries, so the order isn't critical).
+
 ## 2026-11-09
 
 * Stood up External Secrets Operator (ESO) + a self-hosted 1Password Connect
