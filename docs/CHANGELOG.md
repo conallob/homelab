@@ -56,11 +56,16 @@ tags:
   shared "Homelab SSO" one Argo CD's Dex and Tinkerbell's oauth2-proxy
   already use
   ([conallob/homelab-apps#27](https://github.com/conallob/homelab-apps/pull/27)).
-* `tuppr`'s Talos target bumped to v1.14.6, now tracked automatically:
-  Dependabot watches the `ghcr.io/siderolabs/talos` image tag in
-  `apps/tuppr/values.yaml` and opens a PR on every new release (major bumps
-  ignored)
-  ([#28](https://github.com/conallob/homelab-apps/pull/28)).
+* `tuppr`'s Talos target bumped again, to v1.14.6 — the second real upgrade
+  after the manual v1.14.5 test the day before — and this time wired to
+  update itself: the version moved from a bare string in
+  `apps/tuppr/values.yaml` to the full `ghcr.io/siderolabs/talos` image
+  (repository + tag), which `.github/dependabot.yml`'s new `helm` ecosystem
+  entry watches, opening a PR on every new Talos release (major bumps
+  ignored). The `TalosUpgrade` reads `spec.talos.version` from
+  `talos.image.tag`; the image itself is never pulled, just a version
+  marker Dependabot can parse
+  ([conallob/homelab-apps#28](https://github.com/conallob/homelab-apps/pull/28)).
 
 ## 2026-11-11
 
@@ -92,9 +97,36 @@ tags:
   PoE ports
   ([#24](https://github.com/conallob/homelab-apps/pull/24)) — later
   replaced and wired into Tinkerbell as a real BMC (11-13, above).
-* `tuppr`'s Talos API access patch moved to control-plane nodes only —
-  Talos rejects `kubernetesTalosAPIAccess` on workers outright
-  ([#18](https://github.com/conallob/homelab-apps/pull/18)).
+* [`tuppr`](https://github.com/home-operations/tuppr) added to manage Talos
+  OS upgrades declaratively — a single cluster-wide `TalosUpgrade`, no
+  `nodeSelector` (only `lab-node-1`..`4` carry `lab.taku.ie/*` labels, so
+  selecting on them would skip `lab-node-5`/`6`), no installer image
+  configured (`tuppr` derives it from each node's own
+  `machine.install.image` and runtime schematic), and no canary Rollout (a
+  leader-elected, node-rebooting controller gains nothing from one)
+  ([conallob/homelab-apps#18](https://github.com/conallob/homelab-apps/pull/18)).
+  Initially targeted `v1.14.0`, corrected in review to `v1.14.4` — the
+  version the nodes actually ran — so the upgrade stayed a no-op until
+  deliberately bumped.
+  - Also in that PR: an Argo CD health check
+    (`bootstrap/argocd-cm-talosupgrade-health.yaml`, a Lua script mapping
+    `TalosUpgrade` phases to Argo CD health — `Completed`→Healthy,
+    `Failed`→Degraded, `MaintenanceWindow`→Suspended, else Progressing,
+    guarded by `observedGeneration` so a fresh spec bump isn't shown as the
+    previous run's result — applied by hand like the other `argocd-cm`
+    settings), and a post-upgrade hook that labels each node
+    `lab.taku.ie/talos-version` from its reported `osImage` once the
+    upgrade finishes, via a dedicated ServiceAccount scoped to
+    get/list/patch on nodes only. That label deliberately isn't set in
+    machine config, which would pin a stale value as soon as the node
+    upgrades.
+  - `tuppr`'s Talos API access patch moved to control-plane nodes only —
+    Talos rejects `kubernetesTalosAPIAccess` on workers outright, so the
+    "apply to every node" instruction in the first pass was wrong
+    (same PR, [#18](https://github.com/conallob/homelab-apps/pull/18)).
+  - Tested for real: `talosVersion` bumped directly to `v1.14.5` on `main`
+    to exercise an actual upgrade (not a no-op) end to end before trusting
+    `tuppr` with anything automated.
 * Tailscale's operator chart corrected to `1.104.4`, the newest version
   actually published; `1.104.5` was a git tag with no chart behind it,
   which had been silently failing `helm dependency build` in Argo CD
