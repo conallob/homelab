@@ -95,3 +95,32 @@ Boot config files: `~/Documents/GitHub/usbboot/recovery/boot.conf` (CM4) and `~/
 
 - `cfg/compute-blade.ipxe` — update the `TALOS_VERSION` variable at the top when upgrading Talos
 - `cfg/dnsmasq.conf` — runs inside a podman container on the console server; restart the container after changes (see `docs/SOFTWARE.md`)
+
+## Keeping docs current
+
+Update `docs/CHANGELOG.md` as part of the work, not as an afterthought the
+user has to ask for separately — add a dated entry (newest at the top,
+`## YYYY-MM-DD`, the date the change actually merged/happened) whenever you:
+
+- Ship a notable change here or in [homelab-apps](https://github.com/conallob/homelab-apps)
+  that isn't purely cosmetic.
+- Hit a real bug, not just something caught in review — what broke, the
+  actual root cause (not just the symptom), and the fix. These are worth
+  more than the feature list: see existing entries for the level of detail
+  (e.g. the `onepassword-connect` Helm-subchart-nesting entry, or the Rufio
+  HMAC-header-scheme one) — trace the real cause, don't guess at one.
+- Make an architectural or naming decision with a tradeoff (e.g. splitting
+  a resource across two apps/namespaces because of a same-namespace
+  constraint) — note *why*, not just *what*.
+
+Link PRs with `[owner/repo#N](url)` the first time a repo is mentioned in an
+entry, then bare `[#N](url)` for the same repo afterwards. If a change spans
+`homelab-apps` and this repo (or another, like a standalone tool pulled in
+as a dependency), the entry belongs here regardless of which repo most of
+the diff landed in — this is the one place the whole lab's history is
+legible in one scroll.
+
+Also update `docs/HARDWARE.md`, `docs/decisions/`, or this file itself when
+the change actually affects what they describe (a port mapping, a network
+range, a provisioning path) — the changelog entry doesn't substitute for
+keeping the living docs accurate.
