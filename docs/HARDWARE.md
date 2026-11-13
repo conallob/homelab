@@ -57,6 +57,8 @@ tags:
 | lab-node-6 | Port 6          | `d8:3a:dd:9f:50:45`  | Compute Blade v1 MK4 - Basic | CM4008032         |
 
 The MAC belongs to the CM4 module, not the blade. During the 2026-09 mass reflash, the CM4s from port 3 and port 5 swapped blades: `51:bd` now runs as `lab-node-3` (192.168.6.103).
+
+This is the "Shack Switch" (MAC `0c:ea:14:64:fb:8f`) — the **Switch Port** column above is also the PoE port each node's remote power control uses: `lab-node-<N>` → port `<N>`, via [conallob/unifi-power-controller](https://github.com/conallob/unifi-power-controller), deployed as `apps/unifi-power-controller` in [homelab-apps](https://github.com/conallob/homelab-apps) and registered as each node's Tinkerbell BMC (see [CHANGELOG](CHANGELOG.md) 2026-11-13). Keep this table and that project's `nodes:` config in sync if a port mapping ever changes.
 | ctrl-plane-1 |               | `88:a2:9e:51:9c:76`  |                              | CM5016064         |
 | ctrl-plane-2 |               | `88:a2:9e:51:a1:c7`  |                              | CM5016064         |
 | ctrl-plane-3 |               | `88:a2:9e:51:a3:0a`  |                              | CM5016064         |

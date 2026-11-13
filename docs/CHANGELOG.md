@@ -12,6 +12,64 @@ tags:
 # Changelog
 
 
+## 2026-11-13
+
+* Tinkerbell's web UI gained a real hostname and Google sign-in:
+  `tinkerbell.lab.taku.ie`, fronted by `oauth2-proxy` (not Dex — that's Argo
+  CD's own bundled OIDC provider) in `homelab-apps`'s `apps/tinkerbell` — see
+  [conallob/homelab-apps#23](https://github.com/conallob/homelab-apps/pull/23).
+  A `CiliumNetworkPolicy` closes the bypass this would otherwise leave open:
+  without it, the raw Cilium LB VIP (`192.168.7.67:7080`) still served the
+  UI completely unauthenticated even with the hostname gated.
+  - **Real bug found after deploy, not in review:** login kept failing with
+    oauth2-proxy's generic `403 Forbidden` even after Google sign-in
+    succeeded. Cause: `--authenticated-emails-file` is a literal, exact-match
+    email list (confirmed by reading `oauth2-proxy`'s own `validator.go`),
+    not a regex file — the initial config tried `^.*@taku\.ie$` as if it
+    were one. Fixed by using the actual flag for domain-wide access,
+    `--email-domain=taku.ie`, and keeping the file for the one real
+    exception outside that domain ([#29](https://github.com/conallob/homelab-apps/pull/29)).
+  - The Google OAuth client backing this is the same one Argo CD's Dex and
+    Headlamp's OIDC login use — renamed from `argocd-google-oauth` to
+    `homelab-sso-google-oauth` in 1Password once it stopped being Argo
+    CD-specific ([#25](https://github.com/conallob/homelab-apps/pull/25),
+    [#27](https://github.com/conallob/homelab-apps/pull/27)).
+* Remote power control for the PoE-backed lab nodes, registered as real
+  Tinkerbell BMCs:
+  - Started as a small stdlib-only Python script (`node-power`,
+    [#24](https://github.com/conallob/homelab-apps/pull/24)) hitting the
+    Unifi Network API directly to power-cycle/on/off `lab-node-1`..`6` via
+    the Shack Switch's PoE ports.
+  - Replaced with a dedicated Go project,
+    [conallob/unifi-power-controller](https://github.com/conallob/unifi-power-controller),
+    because the Python version guessed at the classic self-hosted
+    controller's API shape — this lab's Unifi controller is a UniFi OS
+    console, which doesn't serve those endpoints at all. The app/namespace
+    was renamed `node-power` → `unifi-power-controller` to match
+    ([#30](https://github.com/conallob/homelab-apps/pull/30)).
+  - Wired in as a real `bmc.tinkerbell.org` BMC via Rufio's generic `rpc`
+    provider protocol — Tinkerbell has no way to tell a PoE port apart from
+    a real BMC. One non-obvious constraint this surfaced:
+    `Hardware.spec.bmcRef` is a `corev1.TypedLocalObjectReference`,
+    same-namespace only, so the `Machine` objects had to move into
+    `apps/tinkerbell` (alongside `Hardware`) rather than live with the
+    controller's own Deployment/Service
+    ([#31](https://github.com/conallob/homelab-apps/pull/31)).
+  - **Real bug, found only once deployed against the live cluster:** every
+    genuine request from Rufio got a `401`, regardless of whether the HMAC
+    secret was right. Cause, traced into Tinkerbell's own source
+    (`rufio/internal/controller/client.go`): Rufio doesn't use bmclib's
+    generic `rpc` provider defaults at all — it hardcodes its own header
+    names (`X-Rufio-Signature-*`, not `X-BMCLIB-Signature-*`) and always
+    signs the body plus the raw value of its own `X-Rufio-Timestamp`
+    header, overriding anything a `Machine` spec sets. Fixed in
+    `unifi-power-controller` itself
+    ([conallob/unifi-power-controller#4](https://github.com/conallob/unifi-power-controller/pull/4)),
+    then the image bumped in `homelab-apps`
+    ([#32](https://github.com/conallob/homelab-apps/pull/32)). All six
+    `Machine` objects now show `Contactable: true` with a live `powerState`
+    read from the real switch.
+
 ## 2026-11-09
 
 * Stood up External Secrets Operator (ESO) + a self-hosted 1Password Connect
