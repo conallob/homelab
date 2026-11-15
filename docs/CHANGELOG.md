@@ -39,6 +39,30 @@ tags:
   CR yet, so nothing touches a node's EEPROM until one is deliberately added,
   starting with one spare, recoverable node before widening to
   `lab-node-1`..`6`.
+* Deployed [kubernetes-sigs/metrics-server](https://github.com/kubernetes-sigs/metrics-server)
+  as `apps/metrics-server` in `homelab-apps`
+  ([conallob/homelab-apps#40](https://github.com/conallob/homelab-apps/pull/40)),
+  ahead of the first planned use of a `HorizontalPodAutoscaler` in this
+  cluster. **Real bug, hit immediately on real hardware:** every node
+  scrape failed —
+  `x509: cannot validate certificate for 192.168.6.104 because it doesn't
+  contain any IP SANs` — because Talos's kubelet never requests a real
+  serving certificate by default; it self-signs one with no useful SANs
+  (Talos ships a diagnostic for exactly this gap: a stuck, unapproved
+  `kubernetes.io/kubelet-serving` CSR). Fixed the immediate break with
+  `--kubelet-insecure-tls`
+  ([#41](https://github.com/conallob/homelab-apps/pull/41)), then started
+  on the real fix rather than stopping there: `patch-kubelet-server-tls-bootstrap.yaml`
+  (this repo, below) enables the standard upstream kubelet
+  server-TLS-bootstrap flow (`serverTLSBootstrap: true` via a `KubeletConfig`
+  document, applied to every node — not control-plane-only like
+  `patch-tuppr-api-access.yaml`), and
+  [postfinance/kubelet-csr-approver](https://github.com/postfinance/kubelet-csr-approver)
+  (`apps/kubelet-csr-approver`,
+  [#42](https://github.com/conallob/homelab-apps/pull/42)) auto-approves
+  the `kubelet-serving` CSRs this produces — Kubernetes doesn't approve
+  those on its own, unlike the bootstrap client CSR. Once `kubectl get csr`
+  shows real approvals, `--kubelet-insecure-tls` comes back out.
 
 ## 2026-11-13
 
