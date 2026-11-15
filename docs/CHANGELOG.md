@@ -17,18 +17,28 @@ tags:
 * Started replacing the manual `rpiboot`/`update-pieeprom.sh` EEPROM flashing
   process above (see "EEPROM Boot Order") with an in-cluster operator:
   [conallob/raspberrypi-operator](https://github.com/conallob/raspberrypi-operator),
-  deployed as `apps/raspberrypi-operator` in `homelab-apps` (no upstream
-  Helm chart, so hand-ported from its own kustomize/Kubebuilder `config/`)
+  deployed as `apps/raspberrypi-operator` in `homelab-apps`
   ([conallob/homelab-apps#35](https://github.com/conallob/homelab-apps/pull/35)).
   A leader-elected manager Deployment reconciles a `BootloaderPolicy` CRD
   into one `NodeBootloader` per matched node and rolls changes out one node
   at a time (cordon, stage, drain, reboot); a privileged agent DaemonSet on
   every arm64 node does the actual EEPROM/`BOOT_ORDER` write and reboot.
+  First cut hand-ported upstream's kustomize/Kubebuilder `config/` into a
+  Helm chart (no upstream chart exists); switched instead to plain
+  Kustomize pointed straight at upstream's own `install.yaml` release asset
+  (that `config/` already rendered, with the image pre-pinned by upstream's
+  release process) — nothing left to hand-sync as upstream's `config/`
+  evolves, just one patch adding Pod Security labels to the namespace it
+  creates. That meant carving this one app out of
+  `bootstrap/applicationset.yaml`'s generic per-directory (Helm) generator
+  into its own, and turning on Argo CD's `kustomize.buildOptions:
+  --enable-helm` repo-server-wide ahead of the next app that wants it (not
+  needed by this one's overlay, which has no `helmCharts:` entry).
   Upstream marks the project **alpha, not yet run on real hardware**, so the
-  chart installs the operator and CRDs but ships with
-  `bootloaderPolicy.enabled: false` — nothing touches a node's EEPROM until
-  that's turned on deliberately, starting with one spare, recoverable node
-  before widening to `lab-node-1`..`6`.
+  overlay installs the operator, CRDs, and agent only — no `BootloaderPolicy`
+  CR yet, so nothing touches a node's EEPROM until one is deliberately added,
+  starting with one spare, recoverable node before widening to
+  `lab-node-1`..`6`.
 
 ## 2026-11-13
 
