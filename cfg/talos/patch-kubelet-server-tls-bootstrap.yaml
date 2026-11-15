@@ -1,0 +1,21 @@
+# Talos's kubelet doesn't request a real serving certificate by default --
+# it self-signs one with no useful SANs, which is why direct TLS clients
+# against the kubelet (metrics-server, see homelab-apps apps/metrics-server)
+# get "x509: ... doesn't contain any IP SANs" and have to fall back to
+# --kubelet-insecure-tls. This enables the standard upstream kubelet
+# server-TLS-bootstrap flow instead, so it submits a real
+# kubernetes.io/kubelet-serving CSR.
+#
+# Apply to EVERY node (control plane and workers alike -- unlike
+# patch-tuppr-api-access.yaml, this isn't control-plane-only):
+#   talosctl -n <node-ip> patch mc --patch @cfg/talos/patch-kubelet-server-tls-bootstrap.yaml
+#
+# Kubernetes does not auto-approve kubelet-serving CSRs (unlike the
+# bootstrap client CSR), so this alone leaves every CSR pending forever --
+# pair it with homelab-apps's apps/kubelet-csr-approver, or `kubectl get
+# csr` will just show a growing pile of Pending requests and the kubelet
+# keeps its self-signed fallback cert either way.
+apiVersion: v1alpha1
+kind: KubeletConfig
+config:
+  serverTLSBootstrap: true
