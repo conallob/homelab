@@ -12,6 +12,24 @@ tags:
 # Changelog
 
 
+## 2026-11-15
+
+* Started replacing the manual `rpiboot`/`update-pieeprom.sh` EEPROM flashing
+  process above (see "EEPROM Boot Order") with an in-cluster operator:
+  [conallob/raspberrypi-operator](https://github.com/conallob/raspberrypi-operator),
+  deployed as `apps/raspberrypi-operator` in `homelab-apps` (no upstream
+  Helm chart, so hand-ported from its own kustomize/Kubebuilder `config/`)
+  ([conallob/homelab-apps#35](https://github.com/conallob/homelab-apps/pull/35)).
+  A leader-elected manager Deployment reconciles a `BootloaderPolicy` CRD
+  into one `NodeBootloader` per matched node and rolls changes out one node
+  at a time (cordon, stage, drain, reboot); a privileged agent DaemonSet on
+  every arm64 node does the actual EEPROM/`BOOT_ORDER` write and reboot.
+  Upstream marks the project **alpha, not yet run on real hardware**, so the
+  chart installs the operator and CRDs but ships with
+  `bootloaderPolicy.enabled: false` — nothing touches a node's EEPROM until
+  that's turned on deliberately, starting with one spare, recoverable node
+  before widening to `lab-node-1`..`6`.
+
 ## 2026-11-13
 
 * Finished wiring remote PoE power control into Tinkerbell as a real BMC
