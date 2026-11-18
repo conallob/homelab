@@ -12,6 +12,32 @@ tags:
 # Changelog
 
 
+## 2026-11-18
+
+* **Real bug:** Headlamp's Google sign-in started failing outright —
+  "The cluster did not accept your sign-in" — with no code change to
+  Headlamp itself. Root cause traced through `homelab-apps`' own git
+  history rather than guessed: an earlier change there,
+  [conallob/homelab-apps#27](https://github.com/conallob/homelab-apps/pull/27),
+  moved Headlamp off its own dedicated `headlamp/google-oauth`
+  1Password item onto the shared "Homelab SSO" client
+  (`homelab-sso-google-oauth`, the same one Argo CD's Dex and
+  Tinkerbell's `oauth2-proxy` use) — but `cfg/talos/patch-apiserver-oidc.yaml`
+  in this repo was never updated to match. The API server kept trusting
+  only the old dedicated client's ID as a valid JWT audience, so every
+  Google ID token Headlamp presented (now carrying the shared client's
+  `aud`) was rejected. Two independently-committed configs already
+  referencing the shared client in plaintext (`bootstrap/argocd-cm-dex-google.yaml`'s
+  `clientID`, `apps/tinkerbell/templates/oauth2-proxy.yaml`'s
+  `--client-id`) gave the correct audience to swap in, rather than
+  needing to read it out of 1Password. Fixed in
+  [#17](https://github.com/conallob/homelab/pull/17); applied with
+  `talosctl patch mc` to `lab-node-1` (the only control-plane node
+  running right now) and confirmed sign-in working again. The CM5
+  `ctrl-plane-1`..`3` boards will need the same patch applied once they
+  actually join the cluster as control-plane nodes.
+
+
 ## 2026-11-15
 
 * Started replacing the manual `rpiboot`/`update-pieeprom.sh` EEPROM flashing
