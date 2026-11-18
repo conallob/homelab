@@ -222,6 +222,16 @@ tags:
   toward `1.104.5` ([#17](https://github.com/conallob/homelab-apps/pull/17))
   — the version that turned out unpublished and was rolled back the next
   day (above).
+* Added `cfg/talos/patch-logging.yaml` so Talos's own service logs
+  (machined, kubelet, containerd) reach GCP Cloud Logging: nodes send
+  `json_lines` over TCP to `127.0.0.1:6170`, where the vector DaemonSet in
+  [conallob/homelab-apps#11](https://github.com/conallob/homelab-apps/pull/11)
+  listens on the host network (loopback only, so nothing is exposed
+  off-node) and forwards them alongside container logs
+  ([#8](https://github.com/conallob/homelab/pull/8)). Apply with
+  `talosctl patch mc --nodes <ip> --patch @cfg/talos/patch-logging.yaml`
+  once vector is running, since nothing listens on that port before then
+  (Talos retries, so the order isn't critical).
 
 ## 2026-11-09
 

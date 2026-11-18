@@ -1,0 +1,12 @@
+# Ship Talos service logs (machined, kubelet, containerd, etc.) to the vector
+# DaemonSet in homelab-apps (apps/vector), which forwards them to GCP Cloud
+# Logging. vector runs with hostNetwork and listens on 127.0.0.1:6170, so each
+# node sends to its own vector pod and nothing leaves the node in the clear.
+#
+# Apply to every node:
+#   talosctl patch mc --nodes <ip> --patch @cfg/talos/patch-logging.yaml
+machine:
+  logging:
+    destinations:
+      - endpoint: tcp://127.0.0.1:6170
+        format: json_lines
