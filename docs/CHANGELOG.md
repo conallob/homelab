@@ -12,12 +12,223 @@ tags:
 # Changelog
 
 
+## 2026-11-18
+
+* **Real bug:** Headlamp's Google sign-in started failing outright —
+  "The cluster did not accept your sign-in" — with no code change to
+  Headlamp itself. Root cause traced through `homelab-apps`' own git
+  history rather than guessed: an earlier change there,
+  [conallob/homelab-apps#27](https://github.com/conallob/homelab-apps/pull/27),
+  moved Headlamp off its own dedicated `headlamp/google-oauth`
+  1Password item onto the shared "Homelab SSO" client
+  (`homelab-sso-google-oauth`, the same one Argo CD's Dex and
+  Tinkerbell's `oauth2-proxy` use) — but `cfg/talos/patch-apiserver-oidc.yaml`
+  in this repo was never updated to match. The API server kept trusting
+  only the old dedicated client's ID as a valid JWT audience, so every
+  Google ID token Headlamp presented (now carrying the shared client's
+  `aud`) was rejected. Two independently-committed configs already
+  referencing the shared client in plaintext (`bootstrap/argocd-cm-dex-google.yaml`'s
+  `clientID`, `apps/tinkerbell/templates/oauth2-proxy.yaml`'s
+  `--client-id`) gave the correct audience to swap in, rather than
+  needing to read it out of 1Password. Fixed in
+  [#17](https://github.com/conallob/homelab/pull/17); applied with
+  `talosctl patch mc` to `lab-node-1` (the only control-plane node
+  running right now) and confirmed sign-in working again. The CM5
+  `ctrl-plane-1`..`3` boards will need the same patch applied once they
+  actually join the cluster as control-plane nodes.
+
+
+## 2026-11-15
+
+* Started replacing the manual `rpiboot`/`update-pieeprom.sh` EEPROM flashing
+  process above (see "EEPROM Boot Order") with an in-cluster operator:
+  [conallob/raspberrypi-operator](https://github.com/conallob/raspberrypi-operator),
+  deployed as `apps/raspberrypi-operator` in `homelab-apps`
+  ([conallob/homelab-apps#35](https://github.com/conallob/homelab-apps/pull/35)).
+  A leader-elected manager Deployment reconciles a `BootloaderPolicy` CRD
+  into one `NodeBootloader` per matched node and rolls changes out one node
+  at a time (cordon, stage, drain, reboot); a privileged agent DaemonSet on
+  every arm64 node does the actual EEPROM/`BOOT_ORDER` write and reboot.
+  First cut hand-ported upstream's kustomize/Kubebuilder `config/` into a
+  Helm chart (no upstream chart exists); switched instead to plain
+  Kustomize pointed straight at upstream's own `install.yaml` release asset
+  (that `config/` already rendered, with the image pre-pinned by upstream's
+  release process) — nothing left to hand-sync as upstream's `config/`
+  evolves, just one patch adding Pod Security labels to the namespace it
+  creates. That meant carving this one app out of
+  `bootstrap/applicationset.yaml`'s generic per-directory (Helm) generator
+  into its own, and turning on Argo CD's `kustomize.buildOptions:
+  --enable-helm` repo-server-wide ahead of the next app that wants it (not
+  needed by this one's overlay, which has no `helmCharts:` entry).
+  Upstream marks the project **alpha, not yet run on real hardware**, so the
+  overlay installs the operator, CRDs, and agent only — no `BootloaderPolicy`
+  CR yet, so nothing touches a node's EEPROM until one is deliberately added,
+  starting with one spare, recoverable node before widening to
+  `lab-node-1`..`6`.
+* Deployed [kubernetes-sigs/metrics-server](https://github.com/kubernetes-sigs/metrics-server)
+  as `apps/metrics-server` in `homelab-apps`
+  ([conallob/homelab-apps#40](https://github.com/conallob/homelab-apps/pull/40)),
+  ahead of the first planned use of a `HorizontalPodAutoscaler` in this
+  cluster. **Real bug, hit immediately on real hardware:** every node
+  scrape failed —
+  `x509: cannot validate certificate for 192.168.6.104 because it doesn't
+  contain any IP SANs` — because Talos's kubelet never requests a real
+  serving certificate by default; it self-signs one with no useful SANs
+  (Talos ships a diagnostic for exactly this gap: a stuck, unapproved
+  `kubernetes.io/kubelet-serving` CSR). Fixed the immediate break with
+  `--kubelet-insecure-tls`
+  ([#41](https://github.com/conallob/homelab-apps/pull/41)), then started
+  on the real fix rather than stopping there: `patch-kubelet-server-tls-bootstrap.yaml`
+  (this repo, below) enables the standard upstream kubelet
+  server-TLS-bootstrap flow (`serverTLSBootstrap: true` via a `KubeletConfig`
+  document, applied to every node — not control-plane-only like
+  `patch-tuppr-api-access.yaml`), and
+  [postfinance/kubelet-csr-approver](https://github.com/postfinance/kubelet-csr-approver)
+  (`apps/kubelet-csr-approver`,
+  [#42](https://github.com/conallob/homelab-apps/pull/42)) auto-approves
+  the `kubelet-serving` CSRs this produces — Kubernetes doesn't approve
+  those on its own, unlike the bootstrap client CSR. Once `kubectl get csr`
+  shows real approvals, `--kubelet-insecure-tls` comes back out.
+
+## 2026-11-13
+
+* Finished wiring remote PoE power control into Tinkerbell as a real BMC
+  (started 11-11, below):
+  - `Hardware.spec.bmcRef` is a `corev1.TypedLocalObjectReference`,
+    same-namespace only — so the `bmc.tinkerbell.org` `Machine` objects had
+    to move into `apps/tinkerbell` (alongside `Hardware`) rather than live
+    with `unifi-power-controller`'s own Deployment/Service in its own
+    namespace
+    ([conallob/homelab-apps#30](https://github.com/conallob/homelab-apps/pull/30),
+    [#31](https://github.com/conallob/homelab-apps/pull/31)).
+  - **Real bug, found only once deployed against the live cluster:** every
+    genuine request from Rufio got a `401`, regardless of whether the HMAC
+    secret was right. Cause, traced into Tinkerbell's own source
+    (`rufio/internal/controller/client.go`): Rufio doesn't use bmclib's
+    generic `rpc` provider defaults at all — it hardcodes its own header
+    names (`X-Rufio-Signature-*`, not `X-BMCLIB-Signature-*`) and always
+    signs the body plus the raw value of its own `X-Rufio-Timestamp`
+    header, overriding anything a `Machine` spec sets. Fixed in
+    `unifi-power-controller` itself
+    ([conallob/unifi-power-controller#4](https://github.com/conallob/unifi-power-controller/pull/4)),
+    then the image bumped in `homelab-apps`
+    ([#32](https://github.com/conallob/homelab-apps/pull/32)). All six
+    `Machine` objects now show `Contactable: true` with a live `powerState`
+    read from the real switch.
+  - **Second real bug, same pattern:** oauth2-proxy's
+    `--authenticated-emails-file` is a literal, exact-match email list
+    (confirmed by reading its own `validator.go`), not a regex file —
+    Tinkerbell's SSO (11-11, below) had tried `^.*@taku\.ie$` as if it were
+    one, so login kept failing with a generic `403 Forbidden` even after
+    Google sign-in succeeded. Fixed by using the actual flag for
+    domain-wide access, `--email-domain=taku.ie`
+    ([#29](https://github.com/conallob/homelab-apps/pull/29)).
+  - The `unifi-api-key` ExternalSecret's `property: credential` — flagged
+    unverified when written, since `getPowerState` now succeeds against the
+    real controller, confirmed correct
+    ([#33](https://github.com/conallob/homelab-apps/pull/33)).
+
+## 2026-11-12
+
+* Headlamp switched from its own dedicated Google OAuth client to the
+  shared "Homelab SSO" one Argo CD's Dex and Tinkerbell's oauth2-proxy
+  already use
+  ([conallob/homelab-apps#27](https://github.com/conallob/homelab-apps/pull/27)).
+* `tuppr`'s Talos target bumped again, to v1.14.6 — the second real upgrade
+  after the manual v1.14.5 test the day before — and this time wired to
+  update itself: the version moved from a bare string in
+  `apps/tuppr/values.yaml` to the full `ghcr.io/siderolabs/talos` image
+  (repository + tag), which `.github/dependabot.yml`'s new `helm` ecosystem
+  entry watches, opening a PR on every new Talos release (major bumps
+  ignored). The `TalosUpgrade` reads `spec.talos.version` from
+  `talos.image.tag`; the image itself is never pulled, just a version
+  marker Dependabot can parse
+  ([conallob/homelab-apps#28](https://github.com/conallob/homelab-apps/pull/28)).
+
+## 2026-11-11
+
+* Argo CD gained Google sign-in through its bundled Dex
+  ([conallob/homelab-apps#22](https://github.com/conallob/homelab-apps/pull/22))
+  — the client this and every later SSO addition below ends up sharing.
+* Headlamp (the cluster's web UI) gained its own Google OIDC login, with
+  admins and taku.ie-domain read-only RBAC
+  ([#16](https://github.com/conallob/homelab-apps/pull/16)), then
+  cert-manager/Argo CD/Tinkerbell plugins, pinned to their one published
+  version each rather than "latest"
+  ([#21](https://github.com/conallob/homelab-apps/pull/21)).
+* Tinkerbell's web UI gained a real hostname and Google sign-in,
+  `tinkerbell.lab.taku.ie`, fronted by `oauth2-proxy` (not Dex — that's
+  Argo CD's own bundled OIDC provider), reusing the same Google client as
+  Argo CD above — renamed in 1Password from `argocd-google-oauth` to
+  `homelab-sso-google-oauth` once it stopped being Argo CD-specific
+  ([#23](https://github.com/conallob/homelab-apps/pull/23),
+  [#25](https://github.com/conallob/homelab-apps/pull/25),
+  [#26](https://github.com/conallob/homelab-apps/pull/26) pins the
+  `oauth2-proxy` image). A `CiliumNetworkPolicy` closes the bypass this
+  would otherwise leave open: without it, the raw Cilium LB VIP
+  (`192.168.7.67:7080`) still served the UI completely unauthenticated
+  even with the hostname gated. (The email-allowlist bug in this setup
+  wasn't caught until 11-13, above.)
+* Remote power control for the PoE-backed lab nodes started here: a small
+  stdlib-only Python script (`node-power`) hitting the Unifi Network API
+  directly to power-cycle/on/off `lab-node-1`..`6` via the Shack Switch's
+  PoE ports
+  ([#24](https://github.com/conallob/homelab-apps/pull/24)) — later
+  replaced and wired into Tinkerbell as a real BMC (11-13, above).
+* [`tuppr`](https://github.com/home-operations/tuppr) added to manage Talos
+  OS upgrades declaratively — a single cluster-wide `TalosUpgrade`, no
+  `nodeSelector` (only `lab-node-1`..`4` carry `lab.taku.ie/*` labels, so
+  selecting on them would skip `lab-node-5`/`6`), no installer image
+  configured (`tuppr` derives it from each node's own
+  `machine.install.image` and runtime schematic), and no canary Rollout (a
+  leader-elected, node-rebooting controller gains nothing from one)
+  ([conallob/homelab-apps#18](https://github.com/conallob/homelab-apps/pull/18)).
+  Initially targeted `v1.14.0`, corrected in review to `v1.14.4` — the
+  version the nodes actually ran — so the upgrade stayed a no-op until
+  deliberately bumped.
+  - Also in that PR: an Argo CD health check
+    (`bootstrap/argocd-cm-talosupgrade-health.yaml`, a Lua script mapping
+    `TalosUpgrade` phases to Argo CD health — `Completed`→Healthy,
+    `Failed`→Degraded, `MaintenanceWindow`→Suspended, else Progressing,
+    guarded by `observedGeneration` so a fresh spec bump isn't shown as the
+    previous run's result — applied by hand like the other `argocd-cm`
+    settings), and a post-upgrade hook that labels each node
+    `lab.taku.ie/talos-version` from its reported `osImage` once the
+    upgrade finishes, via a dedicated ServiceAccount scoped to
+    get/list/patch on nodes only. That label deliberately isn't set in
+    machine config, which would pin a stale value as soon as the node
+    upgrades.
+  - `tuppr`'s Talos API access patch moved to control-plane nodes only —
+    Talos rejects `kubernetesTalosAPIAccess` on workers outright, so the
+    "apply to every node" instruction in the first pass was wrong
+    (same PR, [#18](https://github.com/conallob/homelab-apps/pull/18)).
+  - Tested for real: `talosVersion` bumped directly to `v1.14.5` on `main`
+    to exercise an actual upgrade (not a no-op) end to end before trusting
+    `tuppr` with anything automated.
+* Tailscale's operator chart corrected to `1.104.4`, the newest version
+  actually published; `1.104.5` was a git tag with no chart behind it,
+  which had been silently failing `helm dependency build` in Argo CD
+  ([#20](https://github.com/conallob/homelab-apps/pull/20)).
+
 ## 2026-11-10
 
-* Added `cfg/talos/patch-logging.yaml`: nodes send Talos service logs
-  (`json_lines` over TCP to `127.0.0.1:6170`) to the vector DaemonSet in
-  `homelab-apps` (`apps/vector`), which forwards them, along with container
-  logs, to GCP Cloud Logging. Apply with
+* Headlamp added as an app
+  ([conallob/homelab-apps#14](https://github.com/conallob/homelab-apps/pull/14)),
+  then corrected to chart version `0.46.0` once `0.30.0` turned out not to
+  exist in the chart repo at all
+  ([#15](https://github.com/conallob/homelab-apps/pull/15)).
+* Tailscale operator added as an app
+  ([#12](https://github.com/conallob/homelab-apps/pull/12)), chart bumped
+  toward `1.104.5` ([#17](https://github.com/conallob/homelab-apps/pull/17))
+  — the version that turned out unpublished and was rolled back the next
+  day (above).
+* Added `cfg/talos/patch-logging.yaml` so Talos's own service logs
+  (machined, kubelet, containerd) reach GCP Cloud Logging: nodes send
+  `json_lines` over TCP to `127.0.0.1:6170`, where the vector DaemonSet in
+  [conallob/homelab-apps#11](https://github.com/conallob/homelab-apps/pull/11)
+  listens on the host network (loopback only, so nothing is exposed
+  off-node) and forwards them alongside container logs
+  ([#8](https://github.com/conallob/homelab/pull/8)). Apply with
   `talosctl patch mc --nodes <ip> --patch @cfg/talos/patch-logging.yaml`
   once vector is running, since nothing listens on that port before then
   (Talos retries, so the order isn't critical).
