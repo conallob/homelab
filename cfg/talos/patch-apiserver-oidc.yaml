@@ -20,8 +20,15 @@
 # RBAC for these names lives in homelab-apps/apps/headlamp/templates/rbac.yaml;
 # keep the two admin addresses below in step with it.
 #
-# The audience is the OAuth client ID Headlamp uses (the client-id field of the
-# 1Password item headlamp/google-oauth). A client ID is public, not a secret.
+# The audience is the OAuth client ID Headlamp uses -- the shared "Homelab
+# SSO" client (1Password item homelab-sso-google-oauth, client-id field),
+# the same one Argo CD's Dex and Tinkerbell's oauth2-proxy use. A client ID
+# is public, not a secret. Headlamp used to have its own dedicated client
+# (the now-unused headlamp/google-oauth item); when homelab-apps migrated
+# to the shared one (commit 7f71636), this audience wasn't updated to
+# match, so every Google sign-in into Headlamp failed with "the cluster
+# did not accept your sign-in" -- the API server was still only trusting
+# the old dedicated client's ID as an audience.
 #
 # Apply to ONE control-plane node first and confirm `kubectl get nodes` still
 # works before doing the rest. Client-certificate kubeconfigs and talosctl are
@@ -42,7 +49,7 @@ configuration:
     - issuer:
         url: https://accounts.google.com
         audiences:
-          - 681312183269-bq4jvup0v9vog0k79mqceke8edr1nbfk.apps.googleusercontent.com
+          - 681312183269-ra3318npgc4r4i9oppdd632q2v0s9up0.apps.googleusercontent.com
       claimValidationRules:
         - expression: "claims.email_verified == true"
           message: only verified Google email addresses are accepted
