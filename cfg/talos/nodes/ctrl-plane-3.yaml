@@ -5,6 +5,6 @@ labels:
   lab.taku.ie/soc: cm5
   lab.taku.ie/ram: 16gb
   lab.taku.ie/emmc: 64gb
-  lab.taku.ie/nvme: 120gb
+  lab.taku.ie/nvme: 128gb
   lab.taku.ie/baseboard: cm4-io-base-b
   lab.taku.ie/baseboard-manufacturer: waveshare

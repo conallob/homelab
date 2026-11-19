@@ -76,7 +76,7 @@ Each node carries hardware-flavour labels under the `lab.taku.ie/` prefix, set b
 | lab-node-2 | `cm4` | `8gb` | `32gb` | `1tb`  | `computeblade-basic` | `uptime-labs`            |
 | lab-node-3 | `cm4` | `8gb` | `32gb` | `1tb`  | `computeblade-basic` | `uptime-labs`            |
 | lab-node-4 | `cm4` | `8gb` | `32gb` | `none` | `computeblade-basic` | `uptime-labs`            |
-| ctrl-plane-3 | `cm5` | `16gb` | `64gb` | `120gb`| `cm4-io-base-b`      | `waveshare`              |
+| ctrl-plane-3 | `cm5` | `16gb` | `64gb` | `128gb`| `cm4-io-base-b`      | `waveshare`              |
 
 Values are measured from each node (`talosctl get disks`, `memorymodules`).
 
