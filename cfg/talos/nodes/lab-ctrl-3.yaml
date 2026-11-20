@@ -1,0 +1,10 @@
+# Hardware flavour labels for lab-ctrl-3 (see docs/HARDWARE.md)
+apiVersion: v1alpha1
+kind: KubeNodeConfig
+labels:
+  lab.taku.ie/soc: cm5
+  lab.taku.ie/ram: 16gb
+  lab.taku.ie/emmc: 64gb
+  lab.taku.ie/nvme: 128gb
+  lab.taku.ie/baseboard: cm4-io-base-b
+  lab.taku.ie/baseboard-manufacturer: waveshare
