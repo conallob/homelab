@@ -59,12 +59,14 @@ tags:
 The MAC belongs to the CM4 module, not the blade. During the 2026-09 mass reflash, the CM4s from port 3 and port 5 swapped blades: `51:bd` now runs as `lab-node-3` (192.168.6.103).
 
 This is the "Shack Switch" (MAC `0c:ea:14:64:fb:8f`) — the **Switch Port** column above is also the PoE port each node's remote power control uses: `lab-node-<N>` → port `<N>`, via [conallob/unifi-power-controller](https://github.com/conallob/unifi-power-controller), deployed as `apps/unifi-power-controller` in [homelab-apps](https://github.com/conallob/homelab-apps) and registered as each node's Tinkerbell BMC (see [CHANGELOG](CHANGELOG.md) 2026-11-13). Keep this table and that project's `nodes:` config in sync if a port mapping ever changes.
-| ctrl-plane-1 |               | `88:a2:9e:51:9c:76`  |                              | CM5016064         |
-| ctrl-plane-2 | Shack Switch port 10 | `88:a2:9e:51:a1:c7`  |                              | CM5016064         |
-| ctrl-plane-3 | Workshop Switch port 18 | `88:a2:9e:51:a3:0a`  |                              | CM5016064         |
+| lab-ctrl-1 |               | `88:a2:9e:51:9c:76`  |                              | CM5016064         |
+| lab-ctrl-2 | Shack Switch port 10 | `88:a2:9e:51:a1:c7`  |                              | CM5016064         |
+| lab-ctrl-3 | Workshop Switch port 18 | `88:a2:9e:51:a3:0a`  |                              | CM5016064         |
 | ctrl-plane-temp |            |                      | Raspberry Pi 5 Model B 8GB   | RPi5 (temporary)  |
 
-`ctrl-plane-2` is on the same "Shack Switch" as the CM4 `lab-node-<N>`s above, port 10. `ctrl-plane-3` is on a different physical switch -- the "Workshop Switch" -- but both are on the same VLAN 5 lab network (192.168.6.0/23), so no IP/config changes follow from either; these are purely physical-inventory notes. No PoE/remote-power control for either yet (unlike the Shack-Switch-connected `lab-node-<N>`s, which go through [conallob/unifi-power-controller](https://github.com/conallob/unifi-power-controller)).
+`lab-ctrl-2` is on the same "Shack Switch" as the CM4 `lab-node-<N>`s above, port 10. `lab-ctrl-3` is on a different physical switch -- the "Workshop Switch" -- but both are on the same VLAN 5 lab network (192.168.6.0/23), so no IP/config changes follow from either; these are purely physical-inventory notes. Both now have PoE/remote-power control via [conallob/unifi-power-controller](https://github.com/conallob/unifi-power-controller) (Shack Switch port 10 for `lab-ctrl-2`, Workshop Switch port 18 for `lab-ctrl-3`); `lab-ctrl-1` doesn't yet, no switch port mapped for it until it's physically connected.
+
+All nodes are named `lab-{{role}}-N`, where `{{role}}` is `ctrl` or `node` and N is the 1-indexed number -- `ctrl-plane-1/2/3` and `ctrl-1/2/3` were the pre-rename names for `lab-ctrl-1/2/3` (see [CHANGELOG](CHANGELOG.md)).
 
 ## Node Labels
 
@@ -76,8 +78,8 @@ Each node carries hardware-flavour labels under the `lab.taku.ie/` prefix, set b
 | lab-node-2 | `cm4` | `8gb` | `32gb` | `1tb`  | `computeblade-basic` | `uptime-labs`            |
 | lab-node-3 | `cm4` | `8gb` | `32gb` | `1tb`  | `computeblade-basic` | `uptime-labs`            |
 | lab-node-4 | `cm4` | `8gb` | `32gb` | `none` | `computeblade-basic` | `uptime-labs`            |
-| ctrl-plane-2 | `cm5` | `16gb` | `64gb` | `128gb`| `cm4-io-base-b`      | `waveshare`              |
-| ctrl-plane-3 | `cm5` | `16gb` | `64gb` | `128gb`| `cm4-io-base-b`      | `waveshare`              |
+| lab-ctrl-2 | `cm5` | `16gb` | `64gb` | `128gb`| `cm4-io-base-b`      | `waveshare`              |
+| lab-ctrl-3 | `cm5` | `16gb` | `64gb` | `128gb`| `cm4-io-base-b`      | `waveshare`              |
 
 Values are measured from each node (`talosctl get disks`, `memorymodules`).
 

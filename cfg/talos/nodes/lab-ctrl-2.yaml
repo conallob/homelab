@@ -1,4 +1,4 @@
-# Hardware flavour labels for ctrl-plane-2 (see docs/HARDWARE.md)
+# Hardware flavour labels for lab-ctrl-2 (see docs/HARDWARE.md)
 apiVersion: v1alpha1
 kind: KubeNodeConfig
 labels:
