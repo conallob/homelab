@@ -60,11 +60,11 @@ The MAC belongs to the CM4 module, not the blade. During the 2026-09 mass reflas
 
 This is the "Shack Switch" (MAC `0c:ea:14:64:fb:8f`) — the **Switch Port** column above is also the PoE port each node's remote power control uses: `lab-node-<N>` → port `<N>`, via [conallob/unifi-power-controller](https://github.com/conallob/unifi-power-controller), deployed as `apps/unifi-power-controller` in [homelab-apps](https://github.com/conallob/homelab-apps) and registered as each node's Tinkerbell BMC (see [CHANGELOG](CHANGELOG.md) 2026-11-13). Keep this table and that project's `nodes:` config in sync if a port mapping ever changes.
 | ctrl-plane-1 |               | `88:a2:9e:51:9c:76`  |                              | CM5016064         |
-| ctrl-plane-2 |               | `88:a2:9e:51:a1:c7`  |                              | CM5016064         |
+| ctrl-plane-2 | Shack Switch port 10 | `88:a2:9e:51:a1:c7`  |                              | CM5016064         |
 | ctrl-plane-3 | Workshop Switch port 18 | `88:a2:9e:51:a3:0a`  |                              | CM5016064         |
 | ctrl-plane-temp |            |                      | Raspberry Pi 5 Model B 8GB   | RPi5 (temporary)  |
 
-`ctrl-plane-3` is on a different physical switch than the CM4 nodes above -- the "Workshop Switch", not the Shack Switch -- but the same VLAN 5 lab network (192.168.6.0/23), so no IP/config changes follow from this; it's purely a physical-inventory note. No PoE/remote-power control for it yet (unlike the Shack-Switch-connected `lab-node-<N>`s), and its MAC isn't recorded here.
+`ctrl-plane-2` is on the same "Shack Switch" as the CM4 `lab-node-<N>`s above, port 10. `ctrl-plane-3` is on a different physical switch -- the "Workshop Switch" -- but both are on the same VLAN 5 lab network (192.168.6.0/23), so no IP/config changes follow from either; these are purely physical-inventory notes. No PoE/remote-power control for either yet (unlike the Shack-Switch-connected `lab-node-<N>`s, which go through [conallob/unifi-power-controller](https://github.com/conallob/unifi-power-controller)).
 
 ## Node Labels
 
@@ -76,6 +76,7 @@ Each node carries hardware-flavour labels under the `lab.taku.ie/` prefix, set b
 | lab-node-2 | `cm4` | `8gb` | `32gb` | `1tb`  | `computeblade-basic` | `uptime-labs`            |
 | lab-node-3 | `cm4` | `8gb` | `32gb` | `1tb`  | `computeblade-basic` | `uptime-labs`            |
 | lab-node-4 | `cm4` | `8gb` | `32gb` | `none` | `computeblade-basic` | `uptime-labs`            |
+| ctrl-plane-2 | `cm5` | `16gb` | `64gb` | `128gb`| `cm4-io-base-b`      | `waveshare`              |
 | ctrl-plane-3 | `cm5` | `16gb` | `64gb` | `128gb`| `cm4-io-base-b`      | `waveshare`              |
 
 Values are measured from each node (`talosctl get disks`, `memorymodules`).
