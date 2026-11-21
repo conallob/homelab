@@ -46,9 +46,11 @@ tags:
 * Cloudprober's config moved from an embedded ConfigMap to plain files
   (`apps/cloudprober/config/`) that a new CI job validates with
   `cloudprober --configtest` and `shellcheck`, and it gets its own L4 VIP,
-  `192.168.7.2`, for HTTP 9313 and gRPC 9314
+  `192.168.7.2`, for HTTP 9313 and gRPC 9314, as three stacked PRs
   ([conallob/homelab-apps#78](https://github.com/conallob/homelab-apps/pull/78),
-  open at the time of writing). Tradeoffs: sharing lab-gateway's `192.168.7.1`
+  [#79](https://github.com/conallob/homelab-apps/pull/79),
+  [#80](https://github.com/conallob/homelab-apps/pull/80), open at the time of
+  writing). Tradeoffs: sharing lab-gateway's `192.168.7.1`
   isn't an option because Cilium sharing keys aren't supported with L2
   announcements, so it takes its own VIP; and that path bypasses oauth2-proxy
   and is unauthenticated. Cloudprober's gRPC port is its control API
