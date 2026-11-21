@@ -5,7 +5,7 @@
 #     os:reader to health-check every node's apid
 # Apply to the CONTROL-PLANE node(s) only, before those apps sync; Talos
 # rejects it on workers ("can only be enabled on control plane machines"):
-#   talosctl -n <control-plane-ip> patch mc --patch @cfg/talos/patch-tuppr-api-access.yaml
+#   talosctl -n <control-plane-ip> patch mc --patch @cfg/talos/patch-talos-api-access.yaml
 # allowedKubernetesNamespaces must list every namespace that requests a
 # ServiceAccount, and allowedRoles every role those requests use. A role not
 # listed here is refused, so the Secret is never issued.

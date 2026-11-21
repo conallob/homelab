@@ -7,7 +7,7 @@
 # kubernetes.io/kubelet-serving CSR.
 #
 # Apply to EVERY node (control plane and workers alike -- unlike
-# patch-tuppr-api-access.yaml, this isn't control-plane-only):
+# patch-talos-api-access.yaml, this isn't control-plane-only):
 #   talosctl -n <node-ip> patch mc --patch @cfg/talos/patch-kubelet-server-tls-bootstrap.yaml
 #
 # Kubernetes does not auto-approve kubelet-serving CSRs (unlike the
