@@ -62,4 +62,11 @@ Config lives in `cfg/talos/cilium-values.yaml` and
   dnsmasq serves the lab.
 * Tinkerbell's `192.168.6.127` is outside the pool and must move to a
   `192.168.7.x` address before it can be assigned.
+* One VIP per Service: Cilium's `lbipam.cilium.io/sharing-key` is documented as
+  unsupported together with L2 announcements (the election of the announcing
+  node is per Service, so two Services sharing an IP can have different nodes
+  answering ARP and traffic flaps). Allocate the lowest free address in the
+  pool, unless the last octet can embed the protocol's well-known port
+  (Tinkerbell's `.67`); the current allocations are in `CLAUDE.md`'s Network
+  Layout table.
 * BGP remains an option if load spreading or faster failover is needed.

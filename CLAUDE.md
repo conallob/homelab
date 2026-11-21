@@ -71,8 +71,16 @@ kubectl apply -f cfg/talos/cilium-lb.yaml
 | DHCP range | `192.168.6.10–192.168.6.254` |
 | Control plane VIP | `192.168.6.250` |
 | Console server / dnsmasq | `192.168.6.254` |
+| lab-gateway (`*.lab.taku.ie`) | `192.168.7.1` |
+| Cloudprober LoadBalancer (HTTP 9313, gRPC 9314) | `192.168.7.2` |
 | Tinkerbell LoadBalancer | `192.168.7.67` |
 | Cilium LoadBalancer VIPs (L2) | `192.168.7.1–192.168.7.254` |
+
+VIP allocation: each Service gets its own VIP, the lowest free address in
+`192.168.7.0/24`, unless the last octet can carry the protocol's well-known port
+as a mnemonic (`.67` for Tinkerbell's PXE/TFTP). Keep this table current when
+one is allocated. Cilium sharing keys can't put two Services on one VIP here:
+they aren't supported together with L2 announcements.
 
 VLAN 5 is used for the lab network on the Unifi switch.
 
