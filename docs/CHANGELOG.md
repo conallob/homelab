@@ -11,6 +11,14 @@ tags:
 ---
 # Changelog
 
+## 2026-11-21
+
+* `patch-tuppr-api-access.yaml` now also allows the `cloudprober` namespace
+  and the `os:reader` role, for `apps/cloudprober` in `homelab-apps`
+  ([#74](https://github.com/conallob/homelab-apps/pull/74)), which
+  health-checks every node's Talos API. The file keeps its name (tuppr was
+  its first user) but now serves both apps.
+
 
 ## 2026-11-18
 

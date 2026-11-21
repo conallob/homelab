@@ -1,14 +1,21 @@
-# Lets tuppr (apps/tuppr in homelab-apps), running in the "tuppr" namespace,
-# call the Talos API with os:admin so it can upgrade nodes. Apply to the
-# CONTROL-PLANE node(s) only, before the tuppr app syncs; Talos rejects it on
-# workers ("can only be enabled on control plane machines"):
+# Lets in-cluster workloads call the Talos API through talos.dev
+# ServiceAccount objects (homelab-apps):
+#   - tuppr (apps/tuppr), namespace "tuppr", needs os:admin to upgrade nodes
+#   - cloudprober (apps/cloudprober), namespace "cloudprober", needs only
+#     os:reader to health-check every node's apid
+# Apply to the CONTROL-PLANE node(s) only, before those apps sync; Talos
+# rejects it on workers ("can only be enabled on control plane machines"):
 #   talosctl -n <control-plane-ip> patch mc --patch @cfg/talos/patch-tuppr-api-access.yaml
-# allowedKubernetesNamespaces must match the namespace tuppr runs in.
+# allowedKubernetesNamespaces must list every namespace that requests a
+# ServiceAccount, and allowedRoles every role those requests use. A role not
+# listed here is refused, so the Secret is never issued.
 machine:
   features:
     kubernetesTalosAPIAccess:
       enabled: true
       allowedRoles:
         - os:admin
+        - os:reader
       allowedKubernetesNamespaces:
         - tuppr
+        - cloudprober
