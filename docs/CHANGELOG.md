@@ -37,10 +37,18 @@ tags:
     unauthenticated gRPC control API, the same trust as the lab subnet. The
     policy matches on source address, so any NAT or SNATing subnet router
     between the sites makes a peer arrive as the router and be dropped.
-  * The gaming probeset is the same file in all three repos on purpose: a
+  * The gaming probeset is the same two files in all three repos on purpose: a
     target failing at one site is that site's problem, at all of them it is
     the service. Success is "got an HTTP response" since several targets 4xx
-    at `/`.
+    at `/`. It is a single `gaming` probe whose targets, with their `game`
+    label and per-target `__cp_scheme__` (HTTP vs HTTPS), live in
+    `gaming_targets.textpb`; the first cut was one probe per game, which split
+    the series across `probe` labels.
+  * `cloudprober --configtest` never reads a targets file, so a typo in
+    `gaming_targets.textpb` passes it and leaves the probe with zero targets.
+    CI now also runs cloudprober for a few seconds and checks it logs
+    `Read N endpoints` for every `resource`; verified to fail on a corrupted
+    file.
 
 ## 2026-11-21
 
