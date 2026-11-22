@@ -13,14 +13,17 @@ tags:
 
 ## 2026-11-22
 
-* Cloudprober now probes Home Assistant's cloudprober, and the other way
-  round, over HTTP and gRPC, and both sites run a shared gaming-cloud probeset
-  (Nintendo, Fortnite/Epic, Minecraft/Mojang):
-  [conallob/homelab-apps#81](https://github.com/conallob/homelab-apps/pull/81)
-  and [conallob/Home-Assistant-Config#105](https://github.com/conallob/Home-Assistant-Config/pull/105).
+* Cloudprober now runs as a three-way mesh: the homelab cluster, Home
+  Assistant at Taku (`192.168.1.3`) and Home Assistant at Meadow Close
+  (`192.168.100.2`) each probe the other two over HTTP and gRPC, and all three
+  run a shared gaming-cloud probeset (Nintendo, Fortnite/Epic,
+  Minecraft/Mojang):
+  [conallob/homelab-apps#81](https://github.com/conallob/homelab-apps/pull/81),
+  [conallob/Home-Assistant-Config#105](https://github.com/conallob/Home-Assistant-Config/pull/105)
+  and [conallob/Home-Assistant-Meadow-Close#2](https://github.com/conallob/Home-Assistant-Meadow-Close/pull/2).
   Worth knowing, none of it obvious from the docs:
-  * Cloudprober's gRPC server is **off unless `grpc_port` is set**, so Home
-    Assistant's config had to enable it.
+  * Cloudprober's gRPC server is **off unless `grpc_port` is set**, so each
+    Home Assistant config had to enable it.
   * The peer gRPC probe is `GENERIC` (`cloudprober.Cloudprober.ListProbes`),
     not `HEALTH_CHECK`: the server registers reflection but not
     `grpc.health.v1`. It also needs `insecure_transport: true`: the probe
@@ -28,13 +31,16 @@ tags:
     "first record does not look like a TLS handshake". Found by running two
     locally built instances against each other, not by `--configtest`, which
     accepts the broken version.
-  * Home Assistant (`192.168.1.3`) is outside `lanCIDR`, so the VIP's
-    `CiliumNetworkPolicy` would have silently dropped its probes; it has its
-    own `homeAssistantCIDR` entry. That host can now reach the unauthenticated
-    gRPC control API, the same trust as the lab subnet.
-  * The gaming probeset is the same file in both repos on purpose: a target
-    failing at one site is that site's problem, at both it is the service.
-    Success is "got an HTTP response" since several targets 4xx at `/`.
+  * Both Home Assistants are outside `lanCIDR`, so the VIP's
+    `CiliumNetworkPolicy` would have silently dropped their probes; they are
+    the `peerCIDRs` list in the chart values. Those hosts can now reach the
+    unauthenticated gRPC control API, the same trust as the lab subnet. The
+    policy matches on source address, so any NAT or SNATing subnet router
+    between the sites makes a peer arrive as the router and be dropped.
+  * The gaming probeset is the same file in all three repos on purpose: a
+    target failing at one site is that site's problem, at all of them it is
+    the service. Success is "got an HTTP response" since several targets 4xx
+    at `/`.
 
 ## 2026-11-21
 
