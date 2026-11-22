@@ -49,14 +49,31 @@ tags:
   `192.168.7.2`, for HTTP 9313 and gRPC 9314, as three stacked PRs
   ([conallob/homelab-apps#78](https://github.com/conallob/homelab-apps/pull/78),
   [#79](https://github.com/conallob/homelab-apps/pull/79),
-  [#80](https://github.com/conallob/homelab-apps/pull/80), open at the time of
-  writing). Tradeoffs: sharing lab-gateway's `192.168.7.1`
+  [#80](https://github.com/conallob/homelab-apps/pull/80), all merged).
+  Tradeoffs: sharing lab-gateway's `192.168.7.1`
   isn't an option because Cilium sharing keys aren't supported with L2
   announcements, so it takes its own VIP; and that path bypasses oauth2-proxy
   and is unauthenticated. Cloudprober's gRPC port is its control API
   (`AddProbe`/`RunProbe`/...), so a `CiliumNetworkPolicy` limits it to the lab
   subnet (`192.168.6.0/23`). VIP allocation rule (lowest free address, unless a
   port mnemonic fits the last octet) is in `CLAUDE.md` and ADR 002.
+
+## 2026-11-20
+
+* Renamed the CM5 control-plane boards to match the established
+  `lab-{{role}}-N` naming (`role` is `ctrl` or `node`, `N` is
+  1-indexed) that `lab-node-<N>` already followed: `ctrl-plane-2`/
+  `ctrl-plane-3` → `lab-ctrl-2`/`lab-ctrl-3` here (`cfg/talos/nodes/`
+  file names, `docs/HARDWARE.md`), and `ctrl-2`/`ctrl-3` →
+  `lab-ctrl-2`/`lab-ctrl-3` in [homelab-apps](https://github.com/conallob/homelab-apps)'s
+  `apps/tinkerbell` and `apps/unifi-power-controller` (`Hardware`/
+  `Machine` object names, PoE node-port mapping) before bringing these
+  boards up via Tinkerbell for the first time — inconsistent names
+  across the two naming schemes would have been confusing to untangle
+  once nodes are actually live rather than just inventoried. `ctrl-1`
+  stays unrenamed in spirit as `lab-ctrl-1` even though it isn't
+  physically connected yet, for the same reason.
+
 
 ## 2026-11-18
 
