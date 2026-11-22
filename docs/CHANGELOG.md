@@ -11,6 +11,31 @@ tags:
 ---
 # Changelog
 
+## 2026-11-22
+
+* Cloudprober now probes Home Assistant's cloudprober, and the other way
+  round, over HTTP and gRPC, and both sites run a shared gaming-cloud probeset
+  (Nintendo, Fortnite/Epic, Minecraft/Mojang):
+  [conallob/homelab-apps#81](https://github.com/conallob/homelab-apps/pull/81)
+  and [conallob/Home-Assistant-Config#105](https://github.com/conallob/Home-Assistant-Config/pull/105).
+  Worth knowing, none of it obvious from the docs:
+  * Cloudprober's gRPC server is **off unless `grpc_port` is set**, so Home
+    Assistant's config had to enable it.
+  * The peer gRPC probe is `GENERIC` (`cloudprober.Cloudprober.ListProbes`),
+    not `HEALTH_CHECK`: the server registers reflection but not
+    `grpc.health.v1`. It also needs `insecure_transport: true`: the probe
+    defaults to TLS and the peer's server is plaintext, which shows up as
+    "first record does not look like a TLS handshake". Found by running two
+    locally built instances against each other, not by `--configtest`, which
+    accepts the broken version.
+  * Home Assistant (`192.168.1.3`) is outside `lanCIDR`, so the VIP's
+    `CiliumNetworkPolicy` would have silently dropped its probes; it has its
+    own `homeAssistantCIDR` entry. That host can now reach the unauthenticated
+    gRPC control API, the same trust as the lab subnet.
+  * The gaming probeset is the same file in both repos on purpose: a target
+    failing at one site is that site's problem, at both it is the service.
+    Success is "got an HTTP response" since several targets 4xx at `/`.
+
 ## 2026-11-21
 
 * `cfg/talos/patch-tuppr-api-access.yaml` is now
