@@ -15,9 +15,10 @@ tags:
 
 * Cloudprober now runs as a three-way mesh: the homelab cluster, Home
   Assistant at Taku (`192.168.1.3`) and Home Assistant at Meadow Close
-  (`192.168.100.2`) each probe the other two over HTTP and gRPC, and all three
-  run a shared gaming-cloud probeset (Nintendo, Fortnite/Epic,
-  Minecraft/Mojang):
+  (`192.168.100.2`) each probe the other two over HTTP and gRPC, and the
+  cluster and Taku run a shared gaming-cloud probe (Nintendo, Fortnite/Epic,
+  Minecraft/Mojang; a taku.ie-only workload, so deliberately not at Meadow
+  Close):
   [conallob/homelab-apps#81](https://github.com/conallob/homelab-apps/pull/81),
   [conallob/Home-Assistant-Config#105](https://github.com/conallob/Home-Assistant-Config/pull/105)
   and [conallob/Home-Assistant-Meadow-Close#2](https://github.com/conallob/Home-Assistant-Meadow-Close/pull/2).
@@ -37,9 +38,9 @@ tags:
     unauthenticated gRPC control API, the same trust as the lab subnet. The
     policy matches on source address, so any NAT or SNATing subnet router
     between the sites makes a peer arrive as the router and be dropped.
-  * The gaming probeset is the same two files in all three repos on purpose: a
-    target failing at one site is that site's problem, at all of them it is
-    the service. Success is "got an HTTP response" since several targets 4xx
+  * The gaming probe's two files are the same in homelab-apps and
+    Home-Assistant-Config on purpose: a target failing at one site is that
+    site's problem, at both it is the service. Success is "got an HTTP response" since several targets 4xx
     at `/`. It is a single `gaming` probe whose targets, with their `game`
     label and per-target `__cp_scheme__` (HTTP vs HTTPS), live in
     `gaming_targets.textpb`; the first cut was one probe per game, which split
