@@ -61,6 +61,14 @@ tags:
     peer probes as first merged used `site` for the target, which would have
     done exactly that once the source labels were added. Taku became Woodlands
     in the same change.
+  * The peer probes are one Go-template stanza, `peer_probes.cfg` (identical
+    in all three repos), that renders both the HTTP and gRPC probe from a
+    `$peers` list each site's config defines above its `include`. That works
+    because cloudprober expands `include`s textually before rendering the
+    template, so a variable defined in the including file is visible in the
+    included one. Checked with `-dumpconfig`: the rendered config is
+    byte-identical to the hand-written one in all three, and renders the same
+    in the add-on's directory layout.
   * The gaming probe's two files are the same in homelab-apps and
     Home-Assistant-Config on purpose: a target failing at one site is that
     site's problem, at both it is the service. Success is "got an HTTP
