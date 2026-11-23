@@ -85,9 +85,9 @@ Values are measured from each node (`talosctl get disks`, `memorymodules`).
 
 `lab.taku.ie/talos-version` (e.g. `v1.14.4`) tracks the Talos version each node runs. Unlike the labels above it is **not** in `cfg/talos/nodes/<node>.yaml`: machine config would pin a stale value. Instead a post-upgrade hook on the `TalosUpgrade` in [homelab-apps](https://github.com/conallob/homelab-apps)'s `apps/tuppr` sets it from each node's reported `osImage` at the end of every upgrade run. Check it with `kubectl get nodes -L lab.taku.ie/talos-version`.
 
-## Remote KVM (JetKVM)
+## IP KVM (JetKVM)
 
-[JetKVM](https://jetkvm.com/) devices give HDMI video + USB HID (keyboard/mouse) remote access, independent of the planned UART console server below (see "Console Server" in [SOFTWARE.md](SOFTWARE.md)) — useful for a node whose console is hung before Talos's own kernel console arg takes over, or whose bootloader needs interactive input (e.g. GRUB edits), not just a scrollback of kernel/service logs.
+[JetKVM](https://jetkvm.com/) devices give HDMI video + USB HID (keyboard/mouse) IP KVM access, independent of the planned UART console server below (see "Console Server" in [SOFTWARE.md](SOFTWARE.md)) — useful for a node whose console is hung before Talos's own kernel console arg takes over, or whose bootloader needs interactive input (e.g. GRUB edits), not just a scrollback of kernel/service logs.
 
 | **Node**   | **JetKVM device**         | **HDMI** | **USB** | **UART** |
 |------------|----------------------------|----------|---------|----------|

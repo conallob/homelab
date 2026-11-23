@@ -16,7 +16,7 @@ tags:
 * `lab-node-1`, `lab-ctrl-2`, and `lab-ctrl-3` each now have a
   [JetKVM](https://jetkvm.com/) device (`jetkvm-homelab-ctrl-1`/`-2`/`-3`
   respectively) for remote HDMI + USB HID access — see `docs/HARDWARE.md`'s
-  new "Remote KVM (JetKVM)" section for the mapping. This is independent
+  new "IP KVM (JetKVM)" section for the mapping. This is independent
   of the planned UART console server (see `docs/SOFTWARE.md`); UART
   passthrough on these JetKVMs isn't working yet, HDMI and USB only.
 

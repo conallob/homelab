@@ -16,8 +16,8 @@ tags:
 ## Console Server
 
 **JetKVM (2026-11-23):** `lab-node-1`, `lab-ctrl-2`, and `lab-ctrl-3` each
-now have a [JetKVM](https://jetkvm.com/) device for HDMI + USB HID remote
-access (see [HARDWARE.md](HARDWARE.md) "Remote KVM (JetKVM)" for the
+now have a [JetKVM](https://jetkvm.com/) device for HDMI + USB HID IP KVM
+access (see [HARDWARE.md](HARDWARE.md) "IP KVM (JetKVM)" for the
 node-to-device mapping) — this is separate from, and doesn't replace, the
 UART console server plan below. UART passthrough on these JetKVMs isn't
 working yet.
