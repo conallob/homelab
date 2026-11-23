@@ -14,9 +14,9 @@ tags:
 ## 2026-11-22
 
 * Cloudprober now runs as a three-way mesh: the homelab cluster, Home
-  Assistant at Taku (`192.168.1.3`) and Home Assistant at Meadow Close
+  Assistant at Woodlands (`192.168.1.3`) and Home Assistant at Meadow Close
   (`192.168.100.2`) each probe the other two over HTTP and gRPC, and the
-  cluster and Taku run a shared gaming-cloud probe (Nintendo, Fortnite/Epic,
+  cluster and Woodlands run a shared gaming-cloud probe (Nintendo, Fortnite/Epic,
   Minecraft/Mojang; a taku.ie-only workload, so deliberately not at Meadow
   Close):
   [conallob/homelab-apps#81](https://github.com/conallob/homelab-apps/pull/81),
@@ -38,6 +38,20 @@ tags:
     unauthenticated gRPC control API, the same trust as the lab subnet. The
     policy matches on source address, so any NAT or SNATing subnet router
     between the sites makes a peer arrive as the router and be dropped.
+  * All three cloudprobers label their output the same way, `site` and
+    `deployment` (`woodlands`/`homeassistant`, `meadow-close`/`homeassistant`,
+    `homelab`/`kubernetes`), stamped by cloudprober at publication time on
+    every metric of every surfacer, system metrics included; the target's site
+    is `dst_site`. Cloudprober can only take these from the
+    `CLOUDPROBER_ADDITIONAL_LABELS` environment variable, never from its config
+    file, so the cluster sets it on the Deployment and the Home Assistant
+    add-ons need it set in their own environment. The target label has to be
+    `dst_site`, not `site`: a label set by a probe overrides the stamped one, so
+    a target `site` silently drops the source site (reproduced locally: the
+    series came out `site="<target's>"` with the source value nowhere). The
+    peer probes as first merged used `site` for the target, which would have
+    done exactly that once the source labels were added. Taku became Woodlands
+    in the same change.
   * The gaming probe's two files are the same in homelab-apps and
     Home-Assistant-Config on purpose: a target failing at one site is that
     site's problem, at both it is the service. Success is "got an HTTP response" since several targets 4xx
