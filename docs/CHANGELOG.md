@@ -11,6 +11,15 @@ tags:
 ---
 # Changelog
 
+## 2026-11-23
+
+* `lab-node-1`, `lab-ctrl-2`, and `lab-ctrl-3` each now have a
+  [JetKVM](https://jetkvm.com/) device (`jetkvm-homelab-ctrl-1`/`-2`/`-3`
+  respectively) for remote HDMI + USB HID access — see `docs/HARDWARE.md`'s
+  new "IP KVM (JetKVM)" section for the mapping. This is independent
+  of the planned UART console server (see `docs/SOFTWARE.md`); UART
+  passthrough on these JetKVMs isn't working yet, HDMI and USB only.
+
 ## 2026-11-22
 
 * Cloudprober now runs as a three-way mesh: the homelab cluster, Home
@@ -83,6 +92,43 @@ tags:
   which health-checks every node's Talos API. Tuppr was its first user, but
   it now serves any workload that talks to the Talos API, so the old name was
   misleading. Older entries below still use the old name.
+
+* `apps/cloudprober` in
+  [conallob/homelab-apps#74](https://github.com/conallob/homelab-apps/pull/74)
+  now health-checks every node's Talos API: cloudprober gRPC-probes
+  `machine.MachineService.Version` on port 50000 of each node over mTLS every
+  30s, behind `https://cloudprober.lab.taku.ie` (oauth2-proxy, same Homelab SSO
+  Google client as Tinkerbell). Cloudprober's own `k8s` targets don't cover
+  Nodes, so a native-sidecar script lists Nodes and renders the Talos client
+  credentials from a `talos.dev` `ServiceAccount` Secret. Real bugs on the way
+  to the first successful probe, each traced to its cause:
+  * The `ServiceAccount` Secret's only key is `config`, not `talosconfig` (which
+    I had guessed from memory): the sidecar crash-looped on
+    `open /talos/talosconfig: no such file or directory`
+    ([#76](https://github.com/conallob/homelab-apps/pull/76)).
+  * `patch-talos-api-access.yaml` also had to allow the `os:reader` role, not
+    just the namespace: `allowedRoles` was `os:admin` only. `talosctl patch mc`
+    appends to those lists rather than replacing them, so `os:admin` and
+    `tuppr` now appear twice in the live config (harmless, but untidy).
+  * Cloudprober resolves `call_service_method` with `FindSymbol`, which needs
+    the dotted `machine.MachineService.Version`, not `service/method`
+    ([#77](https://github.com/conallob/homelab-apps/pull/77)).
+  * A binary protoset in the diff broke `ifttt-lint --diff` ("git diff output is
+    not UTF-8"); it is stored base64 now.
+* Cloudprober's config moved from an embedded ConfigMap to plain files
+  (`apps/cloudprober/config/`) that a new CI job validates with
+  `cloudprober --configtest` and `shellcheck`, and it gets its own L4 VIP,
+  `192.168.7.2`, for HTTP 9313 and gRPC 9314, as three stacked PRs
+  ([conallob/homelab-apps#78](https://github.com/conallob/homelab-apps/pull/78),
+  [#79](https://github.com/conallob/homelab-apps/pull/79),
+  [#80](https://github.com/conallob/homelab-apps/pull/80), all merged).
+  Tradeoffs: sharing lab-gateway's `192.168.7.1`
+  isn't an option because Cilium sharing keys aren't supported with L2
+  announcements, so it takes its own VIP; and that path bypasses oauth2-proxy
+  and is unauthenticated. Cloudprober's gRPC port is its control API
+  (`AddProbe`/`RunProbe`/...), so a `CiliumNetworkPolicy` limits it to the lab
+  subnet (`192.168.6.0/23`). VIP allocation rule (lowest free address, unless a
+  port mnemonic fits the last octet) is in `CLAUDE.md` and ADR 002.
 
 ## 2026-11-20
 

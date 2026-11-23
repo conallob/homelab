@@ -15,6 +15,13 @@ tags:
 
 ## Console Server
 
+**JetKVM (2026-11-23):** `lab-node-1`, `lab-ctrl-2`, and `lab-ctrl-3` each
+now have a [JetKVM](https://jetkvm.com/) device for HDMI + USB HID IP KVM
+access (see [HARDWARE.md](HARDWARE.md) "IP KVM (JetKVM)" for the
+node-to-device mapping) — this is separate from, and doesn't replace, the
+UART console server plan below. UART passthrough on these JetKVMs isn't
+working yet.
+
 **Planned (2026-09-19):** an 8-port UART console server, using the existing
 [Waveshare USB-to-8CH TTL Adaptor](https://www.raspberrypi.com/products/compute-module-4/?variant=raspberry-pi-cm4008032)
 (see [HARDWARE.md](HARDWARE.md)), to work around the fact that only
