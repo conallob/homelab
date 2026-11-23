@@ -54,16 +54,25 @@ tags:
     in the same change.
   * The gaming probe's two files are the same in homelab-apps and
     Home-Assistant-Config on purpose: a target failing at one site is that
-    site's problem, at both it is the service. Success is "got an HTTP response" since several targets 4xx
-    at `/`. It is a single `gaming` probe whose targets, with their `game`
+    site's problem, at both it is the service. Success is "got an HTTP
+    response" since several targets 4xx at `/`. It is a single `gaming` probe whose targets, with their `game`
     label and per-target `__cp_scheme__` (HTTP vs HTTPS), live in
     `gaming_targets.textpb`; the first cut was one probe per game, which split
     the series across `probe` labels.
-  * `cloudprober --configtest` never reads a targets file, so a typo in
-    `gaming_targets.textpb` passes it and leaves the probe with zero targets.
-    CI now also runs cloudprober for a few seconds and checks it logs
-    `Read N endpoints` for every `resource`; verified to fail on a corrupted
-    file.
+  * The gaming probe's targets are a fragment (`gaming_targets.textpb`, one
+    `endpoint` per host) that the probeset pulls in with `include` inside its
+    `targets { }` block, not a `file_targets` file. The first version used
+    `file_path: "{{ configDir }}/gaming_targets.textpb"`, which works on the
+    cluster but not in the Home Assistant add-on: `configDir` is the *main*
+    config's directory, and there the main config is the add-on's generated
+    `/data/cloudprober/cloudprober.cfg` with our `base.cfg` merely included
+    from `/homeassistant/cloudprober/`, so the file was looked for in the wrong
+    directory and the probe had no targets. CI missed it twice over:
+    `--configtest` never reads a `file_targets` file, and the check I added for
+    that put everything in one directory. An `include` is textual and resolved
+    relative to the including file, so it works in both layouts and
+    `--configtest` now checks the endpoints themselves (verified to fail on a
+    corrupted file, and to load all 15 targets in the add-on layout).
 
 ## 2026-11-21
 
