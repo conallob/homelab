@@ -11,6 +11,35 @@ tags:
 ---
 # Changelog
 
+## 2026-11-24
+
+* **Real bug:** `lab-node-5`, `lab-ctrl-2`, and `lab-ctrl-3` were all
+  stuck in boot loops ("uboot cannot find a suitable boot target")
+  when first trying to bring them up via Tinkerbell PXE. Two separate,
+  unrelated root causes:
+  - `lab-ctrl-2`/`lab-ctrl-3` (CM5): Tinkerbell's own `smee` DHCP/PXE
+    handler has a hardcoded Raspberry Pi MAC-OUI allowlist
+    (`smee/internal/dhcp/dhcp.go`'s `isRaspberryPI()`) that doesn't
+    include the CM5's `88:a2:9e` prefix. CM5/Pi5 boards self-report
+    DHCP option 93 (client arch) as `0` (x86 BIOS); `smee` normally
+    corrects this via the same OUI check, forcing the real ARM64
+    binary. Since our OUI wasn't recognized, these boards got served
+    an x86 binary they can't execute. Fixed in
+    [homelab-apps#83](https://github.com/conallob/homelab-apps/pull/83)
+    by setting `deployment.envs.smee.ipxeOverrideArchMapping:
+    "0=snp-arm64.efi"` in `apps/tinkerbell` — keyed on the self-reported
+    arch value alone, so it doesn't need `smee`'s OUI list fixed
+    upstream to work here.
+  - `lab-node-5` (CM4): ports 5 and 6 swapped blades again (same kind
+    of swap as the 2026-09 port-3/port-5 one below) — confirmed live in
+    the Unifi controller, the board at port 5 self-reports hostname
+    `lab-node-6`. Tinkerbell's `Hardware` object for `lab-node-5` had
+    the stale MAC on file, so the live DHCP request never matched it
+    and got no netboot response at all. Fixed in
+    [homelab-apps#84](https://github.com/conallob/homelab-apps/pull/84)
+    and this repo's `docs/HARDWARE.md`.
+
+
 ## 2026-11-23
 
 * `lab-node-1`, `lab-ctrl-2`, and `lab-ctrl-3` each now have a
