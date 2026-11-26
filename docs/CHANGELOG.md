@@ -76,20 +76,26 @@ tags:
     label and per-target `__cp_scheme__` (HTTP vs HTTPS), live in
     `gaming_targets.textpb`; the first cut was one probe per game, which split
     the series across `probe` labels.
-  * The gaming probe's targets are a fragment (`gaming_targets.textpb`, one
-    `endpoint` per host) that the probeset pulls in with `include` inside its
-    `targets { }` block, not a `file_targets` file. The first version used
-    `file_path: "{{ configDir }}/gaming_targets.textpb"`, which works on the
-    cluster but not in the Home Assistant add-on: `configDir` is the *main*
+  * The gaming probe reads its targets with `file_targets`, from
+    `{{ $dir }}/gaming_targets.textpb`, where `$dir` is a template variable each
+    site's config defines for where the directory is mounted
+    (`/etc/cloudprober` on the cluster, `/homeassistant/cloudprober` in the
+    Home Assistant add-on). The first version used `{{ configDir }}`, which
+    works on the cluster but not in the add-on: `configDir` is the *main*
     config's directory, and there the main config is the add-on's generated
     `/data/cloudprober/cloudprober.cfg` with our `base.cfg` merely included
     from `/homeassistant/cloudprober/`, so the file was looked for in the wrong
     directory and the probe had no targets. CI missed it twice over:
     `--configtest` never reads a `file_targets` file, and the check I added for
-    that put everything in one directory. An `include` is textual and resolved
-    relative to the including file, so it works in both layouts and
-    `--configtest` now checks the endpoints themselves (verified to fail on a
-    corrupted file, and to load all 15 targets in the add-on layout).
+    that put everything in one directory. CI now starts cloudprober for a few
+    seconds with the directory mounted at `$dir` and checks it logs
+    `Read N endpoints` for every `resource` (verified to fail on a corrupted
+    file). In between I had switched to an `include`d endpoint fragment, which
+    avoids the path entirely and is checked by `--configtest`; I went back to
+    `file_targets` at review, accepting the path variable, because the
+    alternative targets-from-one-file designs needed positive-only filters
+    (cloudprober's `filter` is a regex match: `!site` is literal and RE2 has no
+    lookahead, so "everything except me" can't be written as a filter).
 
 ## 2026-11-21
 
