@@ -59,12 +59,14 @@ tags:
 The MAC belongs to the CM4 module, not the blade. During the 2026-09 mass reflash, the CM4s from port 3 and port 5 swapped blades: `51:bd` now runs as `lab-node-3` (192.168.6.103). Ports 5 and 6 swapped again since (confirmed live in the Unifi controller: the board at port 5 self-reports hostname `lab-node-6`): `50:45` now runs as `lab-node-5` (192.168.6.105), `54:0e` as `lab-node-6` (192.168.6.106).
 
 This is the "Shack Switch" (MAC `0c:ea:14:64:fb:8f`) — the **Switch Port** column above is also the PoE port each node's remote power control uses: `lab-node-<N>` → port `<N>`, via [conallob/unifi-power-controller](https://github.com/conallob/unifi-power-controller), deployed as `apps/unifi-power-controller` in [homelab-apps](https://github.com/conallob/homelab-apps) and registered as each node's Tinkerbell BMC (see [CHANGELOG](CHANGELOG.md) 2026-11-13). Keep this table and that project's `nodes:` config in sync if a port mapping ever changes.
-| lab-ctrl-1 |               | `88:a2:9e:51:9c:76`  |                              | CM5016064         |
-| lab-ctrl-2 | Shack Switch port 10 | `88:a2:9e:51:a1:c7`  |                              | CM5016064         |
-| lab-ctrl-3 | Workshop Switch port 18 | `88:a2:9e:51:a3:0a`  |                              | CM5016064         |
+| lab-ctrl-1 |               | `88:a2:9e:51:a3:0a`  |                              | CM5016064         |
+| lab-ctrl-2 | Shack Switch port 10 | `88:a2:9e:51:9c:76`  |                              | CM5016064         |
+| lab-ctrl-3 | Workshop Switch port 18 | `88:a2:9e:51:a1:c7`  |                              | CM5016064         |
 | ctrl-plane-temp |            |                      | Raspberry Pi 5 Model B 8GB   | RPi5 (temporary)  |
 
 `lab-ctrl-2` is on the same "Shack Switch" as the CM4 `lab-node-<N>`s above, port 10. `lab-ctrl-3` is on a different physical switch -- the "Workshop Switch" -- but both are on the same VLAN 5 lab network (192.168.6.0/23), so no IP/config changes follow from either; these are purely physical-inventory notes. Both now have PoE/remote-power control via [conallob/unifi-power-controller](https://github.com/conallob/unifi-power-controller) (Shack Switch port 10 for `lab-ctrl-2`, Workshop Switch port 18 for `lab-ctrl-3`); `lab-ctrl-1` doesn't yet, no switch port mapped for it until it's physically connected.
+
+The CM5 MACs above were corrected on 2026-11-27: they had been rotated by one (`9c:76` listed as `lab-ctrl-1`, `a1:c7` as `lab-ctrl-2`, `a3:0a` as `lab-ctrl-3`). A CM5's bootloader screen prints its own MAC, so the JetKVM captures settled it: the board on `jetkvm-homelab-ctrl-2` is `88:a2:9e:51:9c:76` (serial `345303e0`, leased `192.168.6.202`) and the one on `jetkvm-homelab-ctrl-3` is `88:a2:9e:51:a1:c7` (serial `8e2a50d3`, leased `192.168.6.203`). `88:a2:9e:51:a3:0a` is `lab-ctrl-1` **by elimination** -- it is the one CM5 MAC never seen on the wire, consistent with that board not being connected yet -- so confirm it from the board's own screen when it is. If a board is ever swapped, re-read its MAC from that screen rather than from a label or a DHCP lease. Keep this table, the Unifi reservations and `apps/tinkerbell`'s `Hardware` objects in [homelab-apps](https://github.com/conallob/homelab-apps) in sync.
 
 All nodes are named `lab-{{role}}-N`, where `{{role}}` is `ctrl` or `node` and N is the 1-indexed number -- `ctrl-plane-1/2/3` and `ctrl-1/2/3` were the pre-rename names for `lab-ctrl-1/2/3` (see [CHANGELOG](CHANGELOG.md)).
 
