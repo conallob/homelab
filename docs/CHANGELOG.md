@@ -61,14 +61,19 @@ tags:
     peer probes as first merged used `site` for the target, which would have
     done exactly that once the source labels were added. Taku became Woodlands
     in the same change.
-  * The peer probes are one Go-template stanza, `peer_probes.cfg` (identical
-    in all three repos), that renders both the HTTP and gRPC probe from a
-    `$peers` list each site's config defines above its `include`. That works
-    because cloudprober expands `include`s textually before rendering the
-    template, so a variable defined in the including file is visible in the
-    included one. Checked with `-dumpconfig`: the rendered config is
-    byte-identical to the hand-written one in all three, and renders the same
-    in the add-on's directory layout.
+  * The peer probes are one Go-template stanza, `peer_probes.cfg`, that
+    renders both the HTTP and gRPC probe. On the cluster and at Woodlands it
+    is identical and takes a `$peers` list each site's config defines above its
+    `include`; that works because cloudprober expands `include`s textually
+    before rendering the template, so a variable defined in the including file
+    is visible in the included one. Checked with `-dumpconfig`: the rendered
+    config is byte-identical to the hand-written one. Meadow Close is a
+    deliberate variant: the same two probes (same names, labels and settings)
+    read their targets with `file_targets` from its own `peer_targets.textpb`
+    (its two peers), via the same per-site `$dir` as the gaming probe. The
+    series come out with identical labels either way, checked locally. It
+    needs its own CI step (`--configtest` never reads a `file_targets` file),
+    and it means the three configs no longer share one stanza file.
   * The gaming probe's two files are the same in homelab-apps and
     Home-Assistant-Config on purpose: a target failing at one site is that
     site's problem, at both it is the service. Success is "got an HTTP
