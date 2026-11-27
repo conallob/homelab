@@ -74,6 +74,37 @@ tags:
   `mcp-jetkvm`'s login got HTTP 401 on both.
 
 
+* **CI outage in homelab-apps, and a move to the in-cluster ARC runners.** Every
+  check on [#95](https://github.com/conallob/homelab-apps/pull/95) (`yamllint`,
+  `ifttt-lint`, `validate`) failed within about three seconds, with no runner
+  assigned and no logs, and a re-run failed the same way. Root cause: the
+  repo's GitHub-hosted Actions budget had run out (confirmed by the repo owner;
+  the run page's own annotation, the only place GitHub states the reason, was not
+  readable from the tooling used). Evidence it was not the diff: the same
+  workflows ran 12s to over a minute and passed on earlier commits that day, the
+  `validate` job's checks (`helm lint`, `helm template`) pass locally on the
+  exact change, and `yamllint` ignores `apps/*/templates/`, the only directory
+  touched. Lesson: a runner-less, log-less failure within seconds across every
+  workflow is a billing or quota problem, not a check result.
+  Fix: [#96](https://github.com/conallob/homelab-apps/pull/96) points the four
+  workflows at the `homelab-arm64` runner scale set that `apps/arc-runners`
+  already defined, via `runs-on: ${{ vars.CI_RUNNER || 'homelab-arm64' }}` so the
+  repo variable `CI_RUNNER=ubuntu-latest` falls back to GitHub-hosted runners.
+  Two things the move needed, both read from sources rather than guessed: the
+  runner image (`ghcr.io/actions/actions-runner`) is minimal, with no compiler or
+  shellcheck, so `ifttt-lint` and `cloudprober-config` install them per job; and
+  in the chart's Docker-in-Docker mode only the `_work` volume is shared with the
+  Docker sidecar, so `cloudprober-config`'s `docker run -v` from a `/tmp`
+  directory would have mounted an empty one, and it now uses `$RUNNER_TEMP`.
+  **Still open:** as of the merge no job had been picked up by those runners
+  (the earliest sat queued for over four hours), so CI now queues instead of
+  failing. Ruled out: the ARC secrets work, the runner and controller images have
+  arm64 builds, the pinned runner is the newest stable release, the jobs request
+  the right label, and no Kyverno or network policy blocks the pods. The stopping
+  point is somewhere in the cluster (listener, runner creation or the runner pods)
+  and has not been identified. Until it is, `CI_RUNNER=ubuntu-latest` does not
+  help either while the GitHub-hosted budget is exhausted.
+
 ## 2026-11-24
 
 * **Real bug:** `lab-node-5`, `lab-ctrl-2`, and `lab-ctrl-3` were all
