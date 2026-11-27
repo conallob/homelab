@@ -27,7 +27,7 @@ tags:
   - Decision, with a tradeoff: auth is mcp-jetkvm's own bearer token, **not**
     the oauth2-proxy + Google sign-in used for cloudprober and Tinkerbell. That
     pattern needs a browser, and MCP clients can't complete one. The cost is a
-    long-lived shared secret (hand-created, like `oauth2-proxy-cookie`) instead
+    long-lived shared secret (generated once, stored in 1Password and synced by ESO) instead
     of per-user identity. The request timeout is disabled on the route because
     MCP responses stream and `record_video` runs up to 60s.
 
