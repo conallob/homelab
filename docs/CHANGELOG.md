@@ -11,6 +11,26 @@ tags:
 ---
 # Changelog
 
+## 2026-11-27
+
+* **mcp-jetkvm as an in-cluster MCP server.** The three JetKVMs
+  (`jetkvm-homelab-ctrl-1`..`3`) are now reachable by MCP clients at
+  https://mcp-jetkvm.lab.taku.ie/mcp: screenshots, video, virtual media and
+  USB configuration without being on the same machine as the KVM. Three
+  pieces:
+  - [conallob/mcp-jetkvm#35](https://github.com/conallob/mcp-jetkvm/pull/35)
+    publishes a multi-arch container image (alpine + ffmpeg) from its release
+    workflow; before that the project had no image at all, only binaries.
+  - [conallob/homelab-apps#90](https://github.com/conallob/homelab-apps/pull/90)
+    adds `apps/mcp-jetkvm` (Deployment in `--http --auth bearer` mode,
+    HTTPRoute on the `lab` Gateway, device passwords synced from 1Password).
+  - Decision, with a tradeoff: auth is mcp-jetkvm's own bearer token, **not**
+    the oauth2-proxy + Google sign-in used for cloudprober and Tinkerbell. That
+    pattern needs a browser, and MCP clients can't complete one. The cost is a
+    long-lived shared secret (hand-created, like `oauth2-proxy-cookie`) instead
+    of per-user identity. The request timeout is disabled on the route because
+    MCP responses stream and `record_video` runs up to 60s.
+
 ## 2026-11-24
 
 * **Real bug:** `lab-node-5`, `lab-ctrl-2`, and `lab-ctrl-3` were all
