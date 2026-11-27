@@ -11,6 +11,69 @@ tags:
 ---
 # Changelog
 
+## 2026-11-27
+
+* **Real bug:** the three CM5 MACs were rotated by one, both in
+  `docs/HARDWARE.md` and in the `Hardware` objects in
+  [conallob/homelab-apps#95](https://github.com/conallob/homelab-apps/pull/95):
+  `9c:76` was recorded as `lab-ctrl-1`, `a1:c7` as `lab-ctrl-2` and `a3:0a` as
+  `lab-ctrl-3`. The true mapping is `9c:76` = `lab-ctrl-2`, `a1:c7` =
+  `lab-ctrl-3`, and `a3:0a` = `lab-ctrl-1`. How it showed up, and how it was
+  traced rather than guessed:
+  - `smee` answered `9c:76` with `netboot-not-allowed` (it matched
+    `lab-ctrl-1`'s `allowPXE: false` object), and `lab-ctrl-3` looked completely
+    silent on the wire, because we were watching `a3:0a`, a MAC that is not
+    connected at all.
+  - A `tcpdump` on the Unifi gateway's `br5` showed the router offering
+    `192.168.6.203` to `a1:c7` while the `Hardware` object said `.202`, which was
+    the first sign the MACs and IPs disagreed.
+  - Settled by JetKVM captures of each board's own bootloader screen, which
+    prints the board's MAC and the DHCP offers it received: the board on
+    `jetkvm-homelab-ctrl-2` is `9c:76` (leased `.202`) and the one on
+    `jetkvm-homelab-ctrl-3` is `a1:c7` (leased `.203`).
+  - `a3:0a` as `lab-ctrl-1` is **inferred by elimination** (the one CM5 MAC never
+    seen on the wire, consistent with that board not being connected). Re-check it
+    from the board's screen when it is.
+  - Lesson: read a board's MAC from its own screen, not from a label or a lease.
+  The corrected MACs do not fix the boot loops by themselves (next bullet).
+* What the same captures showed about the two boot loops, **not yet fixed**:
+  - Both boards fail in the Pi EEPROM bootloader's own network stage, before any
+    iPXE or Talos code runs: they receive the router's offer and `smee`'s proxy
+    offer (`SI_ADDR 192.168.7.67`), then print `NETBOOT init failed`. `smee` has
+    logged no TFTP or iPXE request from any node. The EEPROM stage fetches a Pi
+    firmware tree, not an EFI binary, so the `snp-arm64.efi` the arch-0 override
+    in [#83](https://github.com/conallob/homelab-apps/pull/83) forces is probably
+    the wrong payload for this stage. Not proven: the screen does not say why.
+  - `lab-ctrl-3` is a **blank board**: its eMMC partition table is all zeros and
+    no NVMe boot attempt appeared on screen, so it cycles network, every eMMC
+    partition, restart. Its restart counter read 13771, then 13772 within one
+    clip. Netboot or a direct flash is the only way to provision it.
+  - `lab-ctrl-2` is **not blank**: after about 35s of failed netboot it falls
+    through to an `SK900-128GB` NVMe with an EFI partition (`config.txt`,
+    `bcm2712-rpi-cm5-cm5io.dtb`), shows the U-Boot splash, then the screen goes
+    black and the board resets. That looks like the unresolved CM5 U-Boot to
+    kernel silent reset in
+    [decisions/001-cm5-shelved-image-factory.md](decisions/001-cm5-shelved-image-factory.md).
+    The loop is that reset; the netboot attempt only adds about 35s to each cycle.
+  - Two discrepancies noticed but **not changed here**: the boards' actual
+    `BOOT_ORDER` is `0xf162` (network, NVMe, eMMC, restart), not the `0xf12` in
+    `CLAUDE.md` or the `0xf21` in `docs/BOOTSTRAPPING.md`; and the two boards run
+    different EEPROM builds (`lab-ctrl-2` 2026/02/06, `lab-ctrl-3` 2026/05/26).
+* `mcp-jetkvm`, the tool used for those captures, was broken against current
+  JetKVM firmware: 0.5.9 removed `POST /webrtc/session`
+  ([jetkvm/kvm#1569](https://github.com/jetkvm/kvm/pull/1569)) in favour of a
+  signaling WebSocket, so every WebRTC tool (screenshots, video, virtual media)
+  failed, while its unit tests kept passing against a mock of the removed
+  endpoint. Root cause found by diffing the tool against the firmware source.
+  Fixed in
+  [conallob/mcp-jetkvm#33](https://github.com/conallob/mcp-jetkvm/pull/33),
+  which also adds a test that checks the endpoints, message types and RPC
+  methods against the firmware source, run weekly in CI so the next change fails
+  a test instead of a device. Separately, the 1Password entries for
+  `jetkvm-homelab-ctrl-2` and `-3` had their passwords swapped, which is why
+  `mcp-jetkvm`'s login got HTTP 401 on both.
+
+
 ## 2026-11-24
 
 * **Real bug:** `lab-node-5`, `lab-ctrl-2`, and `lab-ctrl-3` were all
