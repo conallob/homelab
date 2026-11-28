@@ -222,6 +222,87 @@ tags:
   of the planned UART console server (see `docs/SOFTWARE.md`); UART
   passthrough on these JetKVMs isn't working yet, HDMI and USB only.
 
+## 2026-11-22
+
+* Cloudprober now runs as a three-way mesh: the homelab cluster, Home
+  Assistant at Woodlands (`192.168.1.3`) and Home Assistant at Meadow Close
+  (`192.168.100.2`) each probe the other two over HTTP and gRPC, and the
+  cluster and Woodlands run a shared gaming-cloud probe (Nintendo, Fortnite/Epic,
+  Minecraft/Mojang; a taku.ie-only workload, so deliberately not at Meadow
+  Close):
+  [conallob/homelab-apps#81](https://github.com/conallob/homelab-apps/pull/81),
+  [conallob/Home-Assistant-Config#105](https://github.com/conallob/Home-Assistant-Config/pull/105)
+  and [conallob/Home-Assistant-Meadow-Close#2](https://github.com/conallob/Home-Assistant-Meadow-Close/pull/2).
+  Worth knowing, none of it obvious from the docs:
+  * Cloudprober's gRPC server is **off unless `grpc_port` is set**, so each
+    Home Assistant config had to enable it.
+  * The peer gRPC probe is `GENERIC` (`cloudprober.Cloudprober.ListProbes`),
+    not `HEALTH_CHECK`: the server registers reflection but not
+    `grpc.health.v1`. It also needs `insecure_transport: true`: the probe
+    defaults to TLS and the peer's server is plaintext, which shows up as
+    "first record does not look like a TLS handshake". Found by running two
+    locally built instances against each other, not by `--configtest`, which
+    accepts the broken version.
+  * Both Home Assistants are outside `lanCIDR`, so the VIP's
+    `CiliumNetworkPolicy` would have silently dropped their probes; they are
+    the `peerCIDRs` list in the chart values. Those hosts can now reach the
+    unauthenticated gRPC control API, the same trust as the lab subnet. The
+    policy matches on source address, so any NAT or SNATing subnet router
+    between the sites makes a peer arrive as the router and be dropped.
+  * All three cloudprobers label their output the same way, `site` and
+    `deployment` (`woodlands`/`homeassistant`, `meadow-close`/`homeassistant`,
+    `homelab`/`kubernetes`), stamped by cloudprober at publication time on
+    every metric of every surfacer, system metrics included; the target's site
+    is `dst_site`. Cloudprober can only take these from the
+    `CLOUDPROBER_ADDITIONAL_LABELS` environment variable, never from its config
+    file, so the cluster sets it on the Deployment and the Home Assistant
+    add-ons need it set in their own environment. The target label has to be
+    `dst_site`, not `site`: a label set by a probe overrides the stamped one, so
+    a target `site` silently drops the source site (reproduced locally: the
+    series came out `site="<target's>"` with the source value nowhere). The
+    peer probes as first merged used `site` for the target, which would have
+    done exactly that once the source labels were added. Taku became Woodlands
+    in the same change.
+  * The peer probes are one Go-template stanza, `peer_probes.cfg`, that
+    renders both the HTTP and gRPC probe. On the cluster and at Woodlands it
+    is identical and takes a `$peers` list each site's config defines above its
+    `include`; that works because cloudprober expands `include`s textually
+    before rendering the template, so a variable defined in the including file
+    is visible in the included one. Checked with `-dumpconfig`: the rendered
+    config is byte-identical to the hand-written one. Meadow Close is a
+    deliberate variant: the same two probes (same names, labels and settings)
+    read their targets with `file_targets` from its own `peer_targets.textpb`
+    (its two peers), via the same per-site `$dir` as the gaming probe. The
+    series come out with identical labels either way, checked locally. It
+    needs its own CI step (`--configtest` never reads a `file_targets` file),
+    and it means the three configs no longer share one stanza file.
+  * The gaming probe's two files are the same in homelab-apps and
+    Home-Assistant-Config on purpose: a target failing at one site is that
+    site's problem, at both it is the service. Success is "got an HTTP
+    response" since several targets 4xx at `/`. It is a single `gaming` probe whose targets, with their `game`
+    label and per-target `__cp_scheme__` (HTTP vs HTTPS), live in
+    `gaming_targets.textpb`; the first cut was one probe per game, which split
+    the series across `probe` labels.
+  * The gaming probe reads its targets with `file_targets`, from
+    `{{ $dir }}/gaming_targets.textpb`, where `$dir` is a template variable each
+    site's config defines for where the directory is mounted
+    (`/etc/cloudprober` on the cluster, `/homeassistant/cloudprober` in the
+    Home Assistant add-on). The first version used `{{ configDir }}`, which
+    works on the cluster but not in the add-on: `configDir` is the *main*
+    config's directory, and there the main config is the add-on's generated
+    `/data/cloudprober/cloudprober.cfg` with our `base.cfg` merely included
+    from `/homeassistant/cloudprober/`, so the file was looked for in the wrong
+    directory and the probe had no targets. CI missed it twice over:
+    `--configtest` never reads a `file_targets` file, and the check I added for
+    that put everything in one directory. CI now starts cloudprober for a few
+    seconds with the directory mounted at `$dir` and checks it logs
+    `Read N endpoints` for every `resource` (verified to fail on a corrupted
+    file). In between I had switched to an `include`d endpoint fragment, which
+    avoids the path entirely and is checked by `--configtest`; I went back to
+    `file_targets` at review, accepting the path variable, because the
+    alternative targets-from-one-file designs needed positive-only filters
+    (cloudprober's `filter` is a regex match: `!site` is literal and RE2 has no
+    lookahead, so "everything except me" can't be written as a filter).
 
 ## 2026-11-21
 
