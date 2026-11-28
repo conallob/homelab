@@ -11,6 +11,36 @@ tags:
 ---
 # Changelog
 
+## 2026-11-28
+
+* **Self-hosted runners for the other private repos
+  ([homelab-apps#100](https://github.com/conallob/homelab-apps/pull/100)).** A
+  personal account cannot own org-level runners, so each repo needs its own scale
+  set, as its own app: `arc-runners-private-scripts` (`maxRunners` 3),
+  `arc-runners-tailscale-configs` (2), `arc-runners-ha-meadow-close` (1),
+  `arc-runners-professional-artifacts` (1) and `arc-runners-homebrew-private-tap`
+  (1). They are copies of `apps/arc-runners` with the same 1Password credentials
+  and the same `runnerScaleSetName: homelab-arm64`, so `runs-on` is identical in
+  every repo. Only private repos, deliberately: the runners are privileged
+  Docker-in-Docker pods on the lab LAN, and a fork PR to a public repo could run
+  arbitrary code on them (public repos also do not draw on the Actions budget).
+  `aws-terraform-playground` was left on GitHub-hosted runners: it builds amd64
+  under QEMU, which needs `binfmt_misc` on an arm64 Talos node, and its
+  `setup-graphviz` runs `apt-get install` on an image with no package lists. The
+  workflow switches are open, not merged:
+  [private_scripts#35](https://github.com/conallob/private_scripts/pull/35),
+  [Tailscale-Configs#11](https://github.com/conallob/Tailscale-Configs/pull/11),
+  [Home-Assistant-Meadow-Close#4](https://github.com/conallob/Home-Assistant-Meadow-Close/pull/4)
+  and [professional-artifacts#20](https://github.com/conallob/professional-artifacts/pull/20),
+  each switching `runs-on` to `${{ vars.CI_RUNNER || 'homelab-arm64' }}`. The
+  GitHub App has to be installed on each repo before its scale set can register.
+  Not verified: that five scale sets sharing one name across five namespaces do
+  not collide (this relies on ARC naming each listener from the set's name plus a
+  hash of its namespace), and that `tailscale/gitops-acl-action` has an arm64
+  build. `cloudprober/cloudprober:latest` does: the Home-Assistant-Meadow-Close
+  check passed on the runner in 44 seconds, which also confirmed that a
+  `docker run -v` bind mount from the workspace works through the dind sidecar.
+
 ## 2026-11-27
 
 * **Real bug:** the three CM5 MACs were rotated by one, both in
@@ -104,6 +134,55 @@ tags:
   point is somewhere in the cluster (listener, runner creation or the runner pods)
   and has not been identified. Until it is, `CI_RUNNER=ubuntu-latest` does not
   help either while the GitHub-hosted budget is exhausted.
+  **Resolved later the same day:** see the next two entries.
+
+* **Root cause of the ARC runners never picking up a job: the GitHub App private
+  key was one line.** Symptom: every workflow stayed queued, and the controller
+  log repeated `failed to parse RSA private key from PEM: invalid key: Key must be
+  a PEM encoded PKCS1 or PKCS8 key` every 30s, so the scale set was never created
+  and no listener or runner pod ever existed. Root cause: the `arc/github-app`
+  item's `private-key` was stored in a single-line 1Password field, which turned
+  the PEM's newlines into spaces (`-----BEGIN RSA PRIVATE KEY----- MIIE...
+  -----END RSA PRIVATE KEY-----`), and Go's PEM decoder needs a newline after the
+  header. Found by checking the Secret's shape (`base64 -d | wc -l` printed `0`
+  and the first line was `-----BEGIN RSA PRIVATE KEY----- MIIEpAIB`), not by
+  guessing at the App's permissions. The App was also missing `Actions:
+  Read-only`, a separate gap found on the way and added; it was not what blocked
+  this.
+  Fix took two attempts. [conallob/homelab-apps#97](https://github.com/conallob/homelab-apps/pull/97)
+  added a `target.template` to the ExternalSecret that restores the newlines
+  around the header and footer, and it was wrong: it piped the key into Sprig's
+  `regexReplaceAll`, whose signature is `(regex, string, replacement)`, so the key
+  landed in the replacement slot and the Secret became the literal text
+  `\n-----END ${1}-----` (visible as `wc -l` printing `1` and the same PEM
+  error). It had been checked with Go's `regexp` and a `helm template` render,
+  and neither evaluates the template the way External Secrets does.
+  [#98](https://github.com/conallob/homelab-apps/pull/98) nests the calls instead
+  of piping, and was checked by rendering the chart with Helm and evaluating the
+  result with Sprig, the engine External Secrets uses, against flattened and
+  intact PKCS1 and PKCS8 keys. After it synced the key had two newlines (the body
+  keeps its spaces, which Go's decoder ignores), the scale set was created, and
+  the first job ran a few minutes later. Two lessons: test an External Secrets
+  template with Sprig, not Go's `regexp`; and Helm evaluates `{{ }}` even inside
+  YAML comments, so a chart-template ExternalSecret needs its expressions in Helm
+  raw strings and no braces in its comments.
+
+* **ARC: `maxRunners` 3 to 6, and the runner images pre-pulled
+  ([homelab-apps#99](https://github.com/conallob/homelab-apps/pull/99)).**
+  `minRunners` stays `0`, so there is no idle runner and a job's first pod would
+  pull both the runner and the dind image on a Raspberry Pi. A DaemonSet in
+  `apps/arc-runners` runs each image as a sleeping container on every arm64 node,
+  instead of pulling it once in an init container, so the images stay in use and
+  kubelet image garbage collection does not evict them under disk pressure. It
+  reads the runner image and node selector from the scale set's own values, so a
+  runner-image bump rolls the new image out to the nodes first. The dind image
+  (`prePull.dindImage: docker:dind`) is what chart 0.15.1 is expected to inject, but it
+  could not be confirmed, because ghcr is unreachable from the authoring environment;
+  a mismatch only wastes a pull. An HPA or VPA on the runners was considered and
+  rejected: the scale set's listener already scales on queued jobs, and an HPA
+  would fight it and could kill a running job on scale-down. Observed, not acted
+  on: the first three runners all landed on `lab-node-4`; a
+  `topologySpreadConstraints` on the runner template would spread them.
 * **mcp-jetkvm as an in-cluster MCP server.** The three JetKVMs
   (`jetkvm-homelab-ctrl-1`..`3`) are now reachable by MCP clients at
   https://mcp-jetkvm.lab.taku.ie/mcp: screenshots, video, virtual media and
