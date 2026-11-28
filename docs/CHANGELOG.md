@@ -36,8 +36,10 @@ tags:
   GitHub App has to be installed on each repo before its scale set can register.
   Not verified: that five scale sets sharing one name across five namespaces do
   not collide (this relies on ARC naming each listener from the set's name plus a
-  hash of its namespace), and that `tailscale/gitops-acl-action` and
-  `cloudprober/cloudprober:latest` have arm64 builds.
+  hash of its namespace), and that `tailscale/gitops-acl-action` has an arm64
+  build. `cloudprober/cloudprober:latest` does: the Home-Assistant-Meadow-Close
+  check passed on the runner in 44 seconds, which also confirmed that a
+  `docker run -v` bind mount from the workspace works through the dind sidecar.
 
 ## 2026-11-27
 
