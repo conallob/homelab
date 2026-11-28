@@ -183,6 +183,52 @@ tags:
   would fight it and could kill a running job on scale-down. Observed, not acted
   on: the first three runners all landed on `lab-node-4`; a
   `topologySpreadConstraints` on the runner template would spread them.
+* **mcp-jetkvm as an in-cluster MCP server.** The three JetKVMs
+  (`jetkvm-homelab-ctrl-1`..`3`) are now reachable by MCP clients at
+  https://mcp-jetkvm.lab.taku.ie/mcp: screenshots, video, virtual media and
+  USB configuration without being on the same machine as the KVM. Three
+  pieces:
+  - [conallob/mcp-jetkvm#35](https://github.com/conallob/mcp-jetkvm/pull/35)
+    publishes a multi-arch container image (alpine + ffmpeg) from its release
+    workflow; before that the project had no image at all, only binaries.
+  - [conallob/homelab-apps#90](https://github.com/conallob/homelab-apps/pull/90)
+    adds `apps/mcp-jetkvm` (Deployment in `--http --auth bearer` mode,
+    HTTPRoute on the `lab` Gateway, device passwords synced from 1Password).
+  - Decision, with a tradeoff: auth is mcp-jetkvm's own bearer token, **not**
+    the oauth2-proxy + Google sign-in used for cloudprober and Tinkerbell. That
+    pattern needs a browser, and MCP clients can't complete one. The cost is a
+    long-lived shared secret (generated once, stored in 1Password and synced
+    by ESO) instead of per-user identity. The request timeout is disabled on
+    the route because MCP responses stream and `record_video` runs up to 60s.
+* **Real bug:** the `mcp-jetkvm` ExternalSecrets sat in `SecretSyncedError`
+  ("could not get secret data from provider") through three wrong guesses at
+  the 1Password reference; the External Secrets controller log had the actual
+  reasons, one at a time:
+  - The item was first referenced by the ID from its share link
+    ([homelab-apps#90](https://github.com/conallob/homelab-apps/pull/90)); the
+    1Password provider only finds items by **title**, so
+    [#91](https://github.com/conallob/homelab-apps/pull/91) used the title.
+    Titles with spaces and dots (`jetkvm-homelab-ctrl-1 - MCP`) work fine.
+  - Then `expected one 1Password ItemField matching: 'credentials' ... got 0`:
+    the field is matched by **label**, and these API Credential items label it
+    `credential` (singular), which `apps/unifi-power-controller` already used;
+    fixed in [#93](https://github.com/conallob/homelab-apps/pull/93). The
+    generic status message hides this, so read the controller log
+    (`kubectl -n external-secrets logs deploy/external-secrets`), not just
+    `get externalsecret`.
+* **Real bug:** the MCP `initialize` result reported `serverInfo.version`
+  `0.1.0` for the v0.0.7 image, because `internal/jetkvm/server.go` hard-coded
+  it while `--version` used the release's ldflags value. Found by reading the
+  live `initialize` response; fixed in
+  [conallob/mcp-jetkvm#36](https://github.com/conallob/mcp-jetkvm/pull/36).
+* **CI cost:** homelab-apps' `helm-validate` ran one matrix job per chart
+  (~25) on every PR push, and Actions bills each job as at least a minute, so a
+  one-line change cost ~25 billed minutes for ~10 seconds of work; that was
+  most of the free quota in the account's first month.
+  [homelab-apps#92](https://github.com/conallob/homelab-apps/pull/92) validates
+  only the charts a change touches (all of them if `lib/` or the validation
+  itself changes) in a single job, and cancels superseded PR runs. The check
+  name is now `validate`, not `validate (apps/<name>)`.
 
 ## 2026-11-24
 

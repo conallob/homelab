@@ -99,6 +99,8 @@ Values are measured from each node (`talosctl get disks`, `memorymodules`).
 
 The JetKVM device names don't follow the `lab-<role>-N` node-naming convention above — they were numbered independently of which node they ended up attached to, so `jetkvm-homelab-ctrl-1` is attached to `lab-node-1`, not a `lab-ctrl-*` node. JetKVM also supports UART passthrough, but that isn't wired up/working on any of these three yet — HDMI and USB only for now.
 
+All three are also exposed as one MCP server, [mcp-jetkvm](https://github.com/conallob/mcp-jetkvm), at https://mcp-jetkvm.lab.taku.ie/mcp (`apps/mcp-jetkvm` in [homelab-apps](https://github.com/conallob/homelab-apps)); its device IDs are `homelab-ctrl-1`..`3`. Keep that app's `devices:` in step with this table.
+
 ## Previous Deployment Details
 
 | **Node**   | **Switch Port** | **MAC Address**     | **Board**     | **Compute Module** |
